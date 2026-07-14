@@ -1,0 +1,11 @@
+# Optional convenience for running the backend in a container — handy if you'd
+# rather not install Python/Poetry locally. The frontend still runs with npm
+# (see frontend/README.md). Local dev is the recommended path either way.
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      # Allow the Vite dev server (running on the host) to call the API.
+      ALLOWED_ORIGINS: '["http://localhost:3000"]'

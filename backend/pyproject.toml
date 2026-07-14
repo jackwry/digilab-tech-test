@@ -1,0 +1,32 @@
+[project]
+name = "gui-starter-backend"
+version = "0.1.0"
+description = "FastAPI backend starter for the full-stack workflow exercise"
+readme = "README.md"
+requires-python = ">=3.12,<4.0"
+
+[tool.poetry]
+# No importable package to build — this is a runnable app, not a library.
+package-mode = false
+
+[tool.poetry.dependencies]
+python = ">=3.12,<4.0"
+fastapi = "^0.128.0"
+uvicorn = { extras = ["standard"], version = "^0.34.0" }
+pydantic = "^2.10.0"
+pydantic-settings = "^2.7.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.4"
+pytest-cov = "^6.0.0"
+httpx = "^0.28.1"
+black = "^24.10.0"
+flake8 = "^7.1.1"
+
+[tool.pytest.ini_options]
+# Let tests import the `app` package from the project root.
+pythonpath = ["."]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

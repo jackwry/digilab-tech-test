@@ -1,0 +1,13 @@
+{
+  "name": "gui-starter",
+  "private": true,
+  "description": "Optional root scripts to run both apps at once. Each app can also be run on its own — see frontend/README.md and backend/README.md.",
+  "scripts": {
+    "dev": "concurrently -n frontend,backend -c blue,green \"npm run dev:frontend\" \"npm run dev:backend\"",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:backend": "cd backend && poetry run uvicorn app.main:app --reload --port 8000"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}
