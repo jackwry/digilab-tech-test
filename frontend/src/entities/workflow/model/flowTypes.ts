@@ -3,14 +3,14 @@ import type {
   Node as ReactFlowNode,
 } from "@xyflow/react";
 
-import type { HandleDefinition, NodeType } from "@/types/workflow";
+import type { HandleDefinition, NodeType } from "./types";
 
 /**
  * The `data` payload carried by each ReactFlow node in the editor. It's kept
  * close to the domain node's `data` so mapping to/from the persisted
  * `WorkflowNode` is straightforward — but note the graph the API stores is NOT
  * a ReactFlow graph. Converting between these `Flow*` types and the domain
- * `Workflow` (see `@/types/workflow`) is yours to design.
+ * `Workflow` (see `./types`) is yours to design.
  */
 export type WorkflowNodeData = {
   label: string;

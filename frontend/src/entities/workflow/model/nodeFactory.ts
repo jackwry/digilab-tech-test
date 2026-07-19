@@ -1,9 +1,8 @@
 import { v4 as uuid } from "uuid";
 
-import type { NodeType } from "@/types/workflow";
-
 import type { FlowNode } from "./flowTypes";
 import { NODE_DEFINITIONS } from "./nodeDefinitions";
+import type { NodeType } from "./types";
 
 const clone = <T>(value: T): T => structuredClone(value);
 

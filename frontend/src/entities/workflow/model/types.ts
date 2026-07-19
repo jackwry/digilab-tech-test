@@ -7,7 +7,7 @@
  * the frontend and backend in step (see the README note on type alignment).
  *
  * Note: this is intentionally independent of ReactFlow's own Node/Edge types.
- * ReactFlow-specific shapes live in `features/workflow/flowTypes.ts`, and
+ * ReactFlow-specific shapes live in `entities/workflow/model/flowTypes.ts`, and
  * mapping between the two is part of the exercise.
  */
 

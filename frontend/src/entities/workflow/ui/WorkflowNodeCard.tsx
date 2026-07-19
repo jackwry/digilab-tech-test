@@ -1,7 +1,7 @@
 import { Handle, Position } from "@xyflow/react";
 import type { NodeProps } from "@xyflow/react";
 
-import type { FlowNode } from "./flowTypes";
+import type { FlowNode } from "../model/flowTypes";
 
 const HANDLE_STYLE = { width: 10, height: 10, background: "#64748b" } as const;
 
@@ -11,7 +11,7 @@ const HANDLE_STYLE = { width: 10, height: 10, background: "#64748b" } as const;
  *
  * TODO (candidate): this is intentionally minimal (brief §C1).
  */
-export function WorkflowNode({ data }: NodeProps<FlowNode>) {
+export function WorkflowNodeCard({ data }: NodeProps<FlowNode>) {
   const { label, nodeType, inputs, outputs } = data;
 
   return (
