@@ -34,6 +34,12 @@ poetry run pytest
 The suite covers the health check and the current (not-yet-implemented)
 behaviour of the workflow endpoints. Replace the workflow tests as you build.
 
+## Typecheck
+
+```bash
+poetry run mypy app tests
+```
+
 ## What's provided vs. what's yours
 
 **Provided (so you don't spend time on setup):**
@@ -82,7 +88,7 @@ backend/
 │       ├── health.py      # GET /health
 │       └── workflows.py   # POST/GET/PUT /workflows  (stubbed — build these)
 ├── tests/                 # pytest + FastAPI TestClient
-├── pyproject.toml         # Poetry project + dev tooling (pytest, black, flake8)
+├── pyproject.toml         # Poetry project + dev tooling (pytest, black, flake8, mypy)
 └── Dockerfile             # optional containerised run
 ```
 

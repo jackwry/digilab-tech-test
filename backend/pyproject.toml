@@ -22,10 +22,17 @@ pytest-cov = "^6.0.0"
 httpx = "^0.28.1"
 black = "^24.10.0"
 flake8 = "^7.1.1"
+mypy = "^2.3.0"
 
 [tool.pytest.ini_options]
 # Let tests import the `app` package from the project root.
 pythonpath = ["."]
+
+[tool.mypy]
+python_version = "3.12"
+files = ["app", "tests"]
+ignore_missing_imports = true
+check_untyped_defs = true
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
