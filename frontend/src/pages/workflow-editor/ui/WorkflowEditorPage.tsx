@@ -1,4 +1,5 @@
 import { AddNodeToolbar, useAddNode } from "@/features/add-node";
+import { useUpdateNodeLabel } from "@/features/edit-node-label";
 import {
   WorkflowCanvas,
   useWorkflowCanvasState,
@@ -13,6 +14,7 @@ export function WorkflowEditorPage() {
   const { nodes, edges, setNodes, onNodesChange, onEdgesChange, onConnect } =
     useWorkflowCanvasState();
   const handleAddNode = useAddNode(setNodes);
+  const handleLabelChange = useUpdateNodeLabel(setNodes);
 
   return (
     <div className="relative h-full w-full">
@@ -34,6 +36,7 @@ export function WorkflowEditorPage() {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
+        onLabelChange={handleLabelChange}
       />
     </div>
   );
