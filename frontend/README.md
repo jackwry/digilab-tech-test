@@ -76,6 +76,8 @@ frontend/src/
 │   └── workflow-editor/              # the editor page (start here for page chrome)
 ├── widgets/
 │   └── workflow-canvas/              # the ReactFlow canvas composition
+├── features/
+│   └── add-node/                     # toolbar to add a permitted node type (JAC-6)
 ├── entities/
 │   └── workflow/                     # the workflow domain: types, node
 │       ├── model/                    #   definitions/factory, ReactFlow-specific
@@ -85,10 +87,10 @@ frontend/src/
     └── api/client.ts                 # axios instance (base URL, etc.)
 ```
 
-There is no `features/` layer yet — there's no interactive editing behaviour
-to slice out until the corresponding tickets land (e.g. add-node,
-connect-nodes, edit-node-label). Add slices there as that behaviour is built,
-rather than scaffolding empty folders now.
+`features/` holds one slice per user-facing scenario (e.g. `add-node`). Add a
+new slice per ticket as interactive behaviour lands (e.g. connect-nodes,
+edit-node-label) rather than growing an existing slice to cover unrelated
+scenarios.
 
 Everything here is a starting point — restructure it as you see fit and explain
 material changes in your README.

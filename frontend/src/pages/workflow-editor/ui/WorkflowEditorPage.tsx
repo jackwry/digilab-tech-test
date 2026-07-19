@@ -1,4 +1,8 @@
-import { WorkflowCanvas } from "@/widgets/workflow-canvas";
+import { AddNodeToolbar, useAddNode } from "@/features/add-node";
+import {
+  WorkflowCanvas,
+  useWorkflowCanvasState,
+} from "@/widgets/workflow-canvas";
 
 /**
  * The single-page workflow editor. A homepage/workflow-list page is coming in
@@ -6,20 +10,31 @@ import { WorkflowCanvas } from "@/widgets/workflow-canvas";
  * be introduced in `app/` and this page will stop being the sole one rendered.
  */
 export function WorkflowEditorPage() {
+  const { nodes, edges, setNodes, onNodesChange, onEdgesChange, onConnect } =
+    useWorkflowCanvasState();
+  const handleAddNode = useAddNode(setNodes);
+
   return (
     <div className="relative h-full w-full">
-      {/* TODO (candidate): a real toolbar — add-node buttons, save, validate,
-          and a clear status indicator (unsaved / saving / saved / error). */}
-      <div className="absolute top-3 left-3 z-10 rounded-lg bg-white/90 p-3 shadow">
-        <h1 className="text-sm font-semibold text-slate-800">
-          Workflow editor
-        </h1>
-        <p className="mt-1 text-xs text-slate-500">
-          Starter canvas — build from here.
-        </p>
+      {/* TODO (candidate): a save/validate action, and a clear status
+          indicator (unsaved / saving / saved / error). */}
+      <div className="absolute top-3 left-3 z-10 flex flex-col items-start gap-3">
+        <div className="rounded-lg bg-white/90 p-3 shadow">
+          <h1 className="text-md font-semibold text-slate-800">
+            Workflow editor
+          </h1>
+        </div>
+
+        <AddNodeToolbar onAdd={handleAddNode} />
       </div>
 
-      <WorkflowCanvas />
+      <WorkflowCanvas
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onConnect={onConnect}
+      />
     </div>
   );
 }
