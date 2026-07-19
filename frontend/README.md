@@ -42,10 +42,10 @@ Point the app at the backend by copying `.env.example` to `.env` (the default,
 - React 19 + TypeScript (strict) + Vite, with a `@/` path alias.
 - Tailwind CSS v4, ReactFlow (`@xyflow/react`), Zustand, TanStack Query, axios,
   and `sonner` (toasts) installed and wired.
-- A running canvas (`features/workflow/WorkflowEditor.tsx`) with a basic custom
-  node, node definitions, a node factory, and a seed graph.
-- The domain contract in `src/types/workflow.ts` and an API client seam in
-  `src/api/workflows.ts`.
+- A running canvas (`widgets/workflow-canvas/ui/WorkflowCanvas.tsx`) with a
+  basic custom node, node definitions, a node factory, and a seed graph.
+- The domain contract in `entities/workflow/model/types.ts` and an API client
+  seam in `entities/workflow/api/workflowApi.ts`.
 - Vitest configured, with one example test.
 
 **Yours to design and build:**
@@ -59,21 +59,36 @@ Point the app at the backend by copying `.env.example` to `.env` (the default,
 
 ## Layout
 
+The app is organised as [Feature-Sliced Design](https://feature-sliced.design)
+(FSD): layers are ordered `app → pages → widgets → features → entities →
+shared`, and a layer may only import from layers below it. Each slice exposes
+a public API via its `index.ts` — import `@/entities/workflow`, not
+`@/entities/workflow/model/types`.
+
 ```
 frontend/src/
-├── main.tsx                    # root: QueryClient + ReactFlowProvider + Toaster
-├── App.tsx                     # shell
-├── types/workflow.ts           # domain contract (mirrors the backend)
-├── api/workflows.ts            # axios client seam (create / get / update)
-└── features/workflow/
-    ├── WorkflowEditor.tsx      # the ReactFlow canvas (start here)
-    ├── WorkflowNode.tsx        # custom node (improve me)
-    ├── flowTypes.ts            # ReactFlow-specific node/edge types
-    ├── nodeDefinitions.ts      # handles per node type
-    ├── nodeFactory.ts          # build a node of a given type
-    ├── initialWorkflow.ts      # seed graph
-    └── __tests__/              # example Vitest test
+├── main.tsx                          # entry point
+├── index.css                         # global styles (Tailwind)
+├── app/
+│   ├── App.tsx                       # shell: renders the current page
+│   └── providers/AppProviders.tsx    # QueryClient + ReactFlowProvider + Toaster
+├── pages/
+│   └── workflow-editor/              # the editor page (start here for page chrome)
+├── widgets/
+│   └── workflow-canvas/              # the ReactFlow canvas composition
+├── entities/
+│   └── workflow/                     # the workflow domain: types, node
+│       ├── model/                    #   definitions/factory, ReactFlow-specific
+│       ├── api/                      #   shapes, CRUD calls, and the node card UI
+│       └── ui/
+└── shared/
+    └── api/client.ts                 # axios instance (base URL, etc.)
 ```
+
+There is no `features/` layer yet — there's no interactive editing behaviour
+to slice out until the corresponding tickets land (e.g. add-node,
+connect-nodes, edit-node-label). Add slices there as that behaviour is built,
+rather than scaffolding empty folders now.
 
 Everything here is a starting point — restructure it as you see fit and explain
 material changes in your README.

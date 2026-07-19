@@ -78,6 +78,6 @@ cd backend  && poetry run pytest     # pytest
 ## Type alignment
 
 The domain contract is defined on both sides and kept in step by hand for now:
-`frontend/src/types/workflow.ts` and `backend/app/models.py`. The backend
+`frontend/src/entities/workflow/model/types.ts` and `backend/app/models.py`. The backend
 serialises to camelCase so both ends share one wire shape. Keeping these aligned
 (and how you might automate it) is something to think about — see the brief.

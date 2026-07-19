@@ -1,4 +1,4 @@
-import type { HandleDefinition, NodeType } from "@/types/workflow";
+import type { HandleDefinition, NodeType } from "./types";
 
 /**
  * The canonical input/output handles for each node type. A starting point —
