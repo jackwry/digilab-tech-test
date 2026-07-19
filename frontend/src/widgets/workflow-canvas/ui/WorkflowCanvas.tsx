@@ -1,14 +1,12 @@
-import { useCallback } from "react";
 import {
-  addEdge,
   Background,
   Controls,
   MiniMap,
   ReactFlow,
-  useEdgesState,
-  useNodesState,
-  type Connection,
   type NodeTypes,
+  type OnConnect,
+  type OnEdgesChange,
+  type OnNodesChange,
 } from "@xyflow/react";
 
 import {
@@ -17,37 +15,37 @@ import {
   type FlowNode,
 } from "@/entities/workflow";
 
-import { initialEdges, initialNodes } from "../model/initialWorkflow";
-
 const nodeTypes = { workflowNode: WorkflowNodeCard } satisfies NodeTypes;
 
-export function WorkflowCanvas() {
-  const [nodes, , onNodesChange] = useNodesState<FlowNode>(initialNodes);
-  const [edges, setEdges, onEdgesChange] =
-    useEdgesState<FlowEdge>(initialEdges);
+interface WorkflowCanvasProps {
+  nodes: FlowNode[];
+  edges: FlowEdge[];
+  onNodesChange: OnNodesChange<FlowNode>;
+  onEdgesChange: OnEdgesChange<FlowEdge>;
+  onConnect: OnConnect;
+}
 
-  // TODO (candidate): enforce the connection rules from brief §C2 here —
-  // Right now every connection is accepted.
-  const onConnect = useCallback(
-    (connection: Connection) => setEdges((eds) => addEdge(connection, eds)),
-    [setEdges]
-  );
-
+/** The ReactFlow canvas. Controlled — node/edge state lives in the parent (see `useWorkflowCanvasState`). */
+export function WorkflowCanvas({
+  nodes,
+  edges,
+  onNodesChange,
+  onEdgesChange,
+  onConnect,
+}: WorkflowCanvasProps) {
   return (
-    <div className="relative h-full w-full">
-      <ReactFlow<FlowNode, FlowEdge>
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        nodeTypes={nodeTypes}
-        fitView
-      >
-        <Background />
-        <Controls />
-        <MiniMap />
-      </ReactFlow>
-    </div>
+    <ReactFlow<FlowNode, FlowEdge>
+      nodes={nodes}
+      edges={edges}
+      onNodesChange={onNodesChange}
+      onEdgesChange={onEdgesChange}
+      onConnect={onConnect}
+      nodeTypes={nodeTypes}
+      fitView
+    >
+      <Background />
+      <Controls />
+      <MiniMap />
+    </ReactFlow>
   );
 }
