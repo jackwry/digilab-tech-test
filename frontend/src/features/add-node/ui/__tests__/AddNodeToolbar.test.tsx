@@ -21,7 +21,9 @@ describe("AddNodeToolbar", () => {
     await user.click(screen.getByRole("button", { name: /add node/i }));
 
     expect(
-      screen.getByRole("menuitem", { name: /Data Source.*Add a dataset source/ })
+      screen.getByRole("menuitem", {
+        name: /Data Source.*Add a dataset source/,
+      })
     ).toBeInTheDocument();
     expect(
       screen.getByRole("menuitem", { name: /Transform.*Transform a dataset/ })

@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { ReactFlowProvider, type NodeProps } from "@xyflow/react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { ReactFlowProvider, type NodeProps } from "@xyflow/react";
 import { describe, expect, it, vi } from "vitest";
+import { useState } from "react";
 
-import type { FlowNode } from "../../model/flowTypes";
+import type { FlowNode, WorkflowNodeData } from "../../model/flowTypes";
 import { WorkflowNodeCard } from "../WorkflowNodeCard";
 
 function buildProps(
@@ -19,13 +19,15 @@ function buildProps(
     dragging: false,
     positionAbsoluteX: 0,
     positionAbsoluteY: 0,
+    ...overrides,
+
     data: {
       label: "My Node",
       nodeType: "DataSource",
       inputs: [],
       outputs: [],
+      ...overrides.data,
     },
-    ...overrides,
   } as NodeProps<FlowNode>;
 }
 
@@ -35,7 +37,7 @@ function renderCard(
   onDelete = vi.fn()
 ) {
   const built = buildProps(props);
-  render(
+  const rendered = render(
     <ReactFlowProvider>
       <WorkflowNodeCard
         {...built}
@@ -44,7 +46,7 @@ function renderCard(
       />
     </ReactFlowProvider>
   );
-  return { onLabelChange, onDelete, id: built.id };
+  return { rendered, onLabelChange, onDelete, id: built.id };
 }
 
 /**
@@ -86,6 +88,64 @@ function editButton() {
 function deleteButton() {
   return screen.getByRole("button", { name: /delete node/i });
 }
+
+describe("WorkflowNodeCard", () => {
+  it("keeps inputs pinned to the left edge and outputs to the right edge", () => {
+    const {
+      rendered: { container },
+    } = renderCard({
+      data: {
+        inputs: [{ id: "input-1", label: "Input 1", type: "Dataset" }],
+        outputs: [{ id: "output-1", label: "Output 1", type: "Model" }],
+      } as WorkflowNodeData,
+    });
+
+    const input = container.querySelector(".react-flow__handle.target");
+    const output = container.querySelector(".react-flow__handle.source");
+
+    expect(input).toHaveClass("react-flow__handle-left");
+    expect(output).toHaveClass("react-flow__handle-right");
+  });
+
+  it("shapes each handle as a small circle", () => {
+    const {
+      rendered: { container },
+    } = renderCard({
+      data: {
+        inputs: [{ id: "input-1", label: "Input 1", type: "Dataset" }],
+        outputs: [{ id: "output-1", label: "Output 1", type: "Model" }],
+      } as WorkflowNodeData,
+    });
+
+    const input = container.querySelector(
+      ".react-flow__handle.target"
+    ) as HTMLElement;
+    const output = container.querySelector(
+      ".react-flow__handle.source"
+    ) as HTMLElement;
+
+    // Asserted via inline style, not a class: ReactFlow's own unlayered
+    // stylesheet beats Tailwind's layered utilities for these properties, so
+    // the component sets them inline (see the comment in WorkflowNodeCard.tsx).
+    for (const handle of [input, output]) {
+      expect(handle.style.borderRadius).toBe("9999px");
+      expect(handle.style.width).toBe("10px");
+      expect(handle.style.height).toBe("10px");
+    }
+  });
+
+  it("shows the node type and the (possibly distinct) node label in the header", () => {
+    const {
+      rendered: { getAllByText, getByText },
+    } = renderCard({
+      data: { nodeType: "Model", label: "My Model" } as WorkflowNodeData,
+    });
+
+    // "Model" appears both in the header and as the output handle's label.
+    expect(getAllByText("Model").length).toBeGreaterThanOrEqual(1);
+    expect(getByText("My Model")).toBeInTheDocument();
+  });
+});
 
 describe("WorkflowNodeCard label editing", () => {
   it("renders the label as static text by default, with the edit icon present but hover-revealed", () => {
