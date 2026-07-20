@@ -16,6 +16,7 @@ export type {
 export type { FlowNode, FlowEdge, WorkflowNodeData } from "./model/flowTypes";
 export { NODE_DEFINITIONS } from "./model/nodeDefinitions";
 export { createFlowNode } from "./model/nodeFactory";
+export { useWorkflowStore } from "./model/workflowStore";
 
 export { createWorkflow, getWorkflow, updateWorkflow } from "./api/workflowApi";
 

@@ -1,8 +1,6 @@
 import { AddNodeToolbar, useAddNode } from "@/features/add-node";
-import {
-  WorkflowCanvas,
-  useWorkflowCanvasState,
-} from "@/widgets/workflow-canvas";
+import { useWorkflowStore } from "@/entities/workflow";
+import { WorkflowCanvas } from "@/widgets/workflow-canvas";
 
 /**
  * The single-page workflow editor. A homepage/workflow-list page is coming in
@@ -10,8 +8,7 @@ import {
  * be introduced in `app/` and this page will stop being the sole one rendered.
  */
 export function WorkflowEditorPage() {
-  const { nodes, edges, setNodes, onNodesChange, onEdgesChange, onConnect } =
-    useWorkflowCanvasState();
+  const setNodes = useWorkflowStore((state) => state.setNodes);
   const handleAddNode = useAddNode(setNodes);
 
   return (
@@ -28,13 +25,7 @@ export function WorkflowEditorPage() {
         <AddNodeToolbar onAdd={handleAddNode} />
       </div>
 
-      <WorkflowCanvas
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-      />
+      <WorkflowCanvas />
     </div>
   );
 }

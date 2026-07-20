@@ -13,7 +13,10 @@ const node = (id: string): FlowNode => ({
 
 describe("nextNodePosition", () => {
   it("returns a position for an empty canvas", () => {
-    expect(nextNodePosition([])).toEqual({ x: expect.any(Number), y: expect.any(Number) });
+    expect(nextNodePosition([])).toEqual({
+      x: expect.any(Number),
+      y: expect.any(Number),
+    });
   });
 
   it("never returns the same position twice in a row as nodes are added", () => {

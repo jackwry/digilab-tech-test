@@ -1,5 +1,7 @@
 # Full-Stack Workflow Exercise — Starter
 
+[![CI](https://github.com/jackwry/digilab-tech-test/actions/workflows/ci.yml/badge.svg)](https://github.com/jackwry/digilab-tech-test/actions/workflows/ci.yml)
+
 A starter repository for the full-stack engineering exercise. It gives you a
 running React + TypeScript frontend and a runnable FastAPI backend so you can
 spend your time on the problem — designing and building the workflow editor,
