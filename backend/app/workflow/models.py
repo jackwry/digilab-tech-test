@@ -7,6 +7,7 @@ justify it, but keep the two sides aligned (see the README note on type
 alignment).
 """
 
+from datetime import datetime
 from typing import Literal, Optional
 
 from app.dto import CamelModel
@@ -57,6 +58,7 @@ class Workflow(CamelModel):
     name: str
     nodes: list[WorkflowNode] = []
     edges: list[WorkflowEdge] = []
+    updated_at: Optional[datetime] = None
 
 
 class ValidationIssue(CamelModel):

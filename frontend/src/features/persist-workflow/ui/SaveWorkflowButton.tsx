@@ -6,6 +6,7 @@ const STATUS_TEXT: Record<PersistenceStatus, string> = {
   saving: "Saving…",
   saved: "Saved",
   error: "Failed to save",
+  "not-found": "",
 };
 
 interface SaveWorkflowButtonProps {

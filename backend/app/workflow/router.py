@@ -1,9 +1,9 @@
 import sqlite3
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 
 from app.db import get_connection
-from app.dto import DataResponse
+from app.dto import DataResponse, ListResponse
 from app.workflow.models import Workflow
 from app.workflow.repository import WorkflowRepository
 
@@ -26,6 +26,22 @@ def create_workflow(
 ) -> DataResponse[Workflow]:
     """Create a workflow and return it with a stable, server-assigned identifier."""
     return DataResponse(data=repo.create(workflow))
+
+
+@router.get("", response_model=ListResponse[Workflow])
+def list_workflows(
+    offset: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=50),
+    repo: WorkflowRepository = Depends(get_repository),
+) -> ListResponse[Workflow]:
+    """List workflows, most recently updated first (JAC-13 homepage).
+
+    Paginated via `offset`/`limit` query params; the frontend doesn't request
+    a page yet (it just takes the default), but the repository and this
+    endpoint both support it for when it does.
+    """
+    workflows = repo.list_all(offset=offset, limit=limit)
+    return ListResponse(data=workflows, offset=offset, limit=limit)
 
 
 @router.get("/{workflow_id}", response_model=DataResponse[Workflow])

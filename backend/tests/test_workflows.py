@@ -102,3 +102,52 @@ def test_update_missing_workflow_returns_404_dto_error(client: TestClient) -> No
     assert response.status_code == 404
     body = response.json()
     assert body["errors"][0]["code"] == "WORKFLOW_NOT_FOUND"
+
+
+def test_list_workflows_returns_empty_list_envelope(client: TestClient) -> None:
+    response = client.get("/workflows")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["data"] == []
+    assert body["offset"] == 0
+    assert body["limit"] == 50
+
+
+def test_list_workflows_returns_created_workflows_newest_first(
+    client: TestClient,
+) -> None:
+    first = create_demo_workflow(client)
+    client.put(
+        f"/workflows/{first['id']}",
+        json={"name": "first-renamed", "nodes": [], "edges": []},
+    )
+    second = create_demo_workflow(client)
+
+    response = client.get("/workflows")
+
+    assert response.status_code == 200
+    ids = [item["id"] for item in response.json()["data"]]
+    assert ids == [second["id"], first["id"]]
+
+
+def test_list_workflows_respects_requested_limit_and_offset(
+    client: TestClient,
+) -> None:
+    first = create_demo_workflow(client)
+    second = create_demo_workflow(client)
+
+    response = client.get("/workflows", params={"limit": 1, "offset": 1})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["offset"] == 1
+    assert body["limit"] == 1
+    assert [item["id"] for item in body["data"]] == [first["id"]]
+    assert second["id"] not in [item["id"] for item in body["data"]]
+
+
+def test_list_workflows_rejects_a_limit_above_fifty(client: TestClient) -> None:
+    response = client.get("/workflows", params={"limit": 51})
+
+    assert response.status_code == 422

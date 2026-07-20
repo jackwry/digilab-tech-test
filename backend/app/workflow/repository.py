@@ -7,15 +7,21 @@ trade-off.
 
 import sqlite3
 import uuid
+from datetime import datetime, timezone
 
 from app.workflow.models import Workflow
 
 CREATE_TABLE_SQL = """
 CREATE TABLE IF NOT EXISTS workflows (
     id TEXT PRIMARY KEY,
-    payload TEXT NOT NULL
+    payload TEXT NOT NULL,
+    updated_at TEXT NOT NULL
 )
 """
+
+
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 class WorkflowNotFoundError(Exception):
@@ -39,10 +45,11 @@ class WorkflowRepository:
 
     def create(self, workflow: Workflow) -> Workflow:
         """Insert a new workflow, assigning it a fresh server-side id."""
-        stored = workflow.model_copy(update={"id": uuid.uuid4().hex})
+        now = _now()
+        stored = workflow.model_copy(update={"id": uuid.uuid4().hex, "updated_at": now})
         self._conn.execute(
-            "INSERT INTO workflows (id, payload) VALUES (?, ?)",
-            (stored.id, stored.model_dump_json(by_alias=True)),
+            "INSERT INTO workflows (id, payload, updated_at) VALUES (?, ?, ?)",
+            (stored.id, stored.model_dump_json(by_alias=True), now.isoformat()),
         )
         return stored
 
@@ -57,11 +64,20 @@ class WorkflowRepository:
 
     def update(self, workflow_id: str, workflow: Workflow) -> Workflow:
         """Replace an existing workflow's fields, or raise `WorkflowNotFoundError`."""
-        stored = workflow.model_copy(update={"id": workflow_id})
+        now = _now()
+        stored = workflow.model_copy(update={"id": workflow_id, "updated_at": now})
         cursor = self._conn.execute(
-            "UPDATE workflows SET payload = ? WHERE id = ?",
-            (stored.model_dump_json(by_alias=True), workflow_id),
+            "UPDATE workflows SET payload = ?, updated_at = ? WHERE id = ?",
+            (stored.model_dump_json(by_alias=True), now.isoformat(), workflow_id),
         )
         if cursor.rowcount == 0:
             raise WorkflowNotFoundError(workflow_id)
         return stored
+
+    def list_all(self, offset: int = 0, limit: int = 50) -> list[Workflow]:
+        """Fetch a page of workflows, most recently updated first."""
+        rows = self._conn.execute(
+            "SELECT payload FROM workflows ORDER BY updated_at DESC LIMIT ? OFFSET ?",
+            (limit, offset),
+        ).fetchall()
+        return [Workflow.model_validate_json(row["payload"]) for row in rows]

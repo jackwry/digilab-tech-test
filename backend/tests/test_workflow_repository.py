@@ -122,3 +122,66 @@ def test_update_does_not_change_the_id(repo: WorkflowRepository) -> None:
     updated = repo.update(created.id, make_workflow(id="some-other-id"))
 
     assert updated.id == created.id
+
+
+def test_create_sets_updated_at(repo: WorkflowRepository) -> None:
+    created = repo.create(make_workflow())
+
+    assert created.updated_at is not None
+
+
+def test_update_refreshes_updated_at(repo: WorkflowRepository) -> None:
+    created = repo.create(make_workflow())
+    assert created.id is not None
+    assert created.updated_at is not None
+
+    updated = repo.update(created.id, make_workflow(name="renamed"))
+
+    assert updated.updated_at is not None
+    assert updated.updated_at >= created.updated_at
+
+
+def test_list_all_is_empty_when_no_workflows_exist(
+    repo: WorkflowRepository,
+) -> None:
+    assert repo.list_all() == []
+
+
+def test_list_all_returns_every_workflow(repo: WorkflowRepository) -> None:
+    first = repo.create(make_workflow(name="first"))
+    second = repo.create(make_workflow(name="second"))
+
+    ids = {workflow.id for workflow in repo.list_all()}
+
+    assert ids == {first.id, second.id}
+
+
+def test_list_all_orders_by_updated_at_descending(
+    repo: WorkflowRepository,
+) -> None:
+    first = repo.create(make_workflow(name="first"))
+    assert first.id is not None
+    second = repo.create(make_workflow(name="second"))
+    # Touch `first` again so it becomes the most recently updated.
+    repo.update(first.id, make_workflow(name="first-renamed"))
+
+    results = repo.list_all()
+
+    assert [workflow.id for workflow in results] == [first.id, second.id]
+
+
+def test_list_all_respects_limit(repo: WorkflowRepository) -> None:
+    repo.create(make_workflow(name="first"))
+    repo.create(make_workflow(name="second"))
+
+    assert len(repo.list_all(limit=1)) == 1
+
+
+def test_list_all_respects_offset(repo: WorkflowRepository) -> None:
+    first = repo.create(make_workflow(name="first"))
+    second = repo.create(make_workflow(name="second"))
+
+    results = repo.list_all(offset=1, limit=1)
+
+    assert [workflow.id for workflow in results] == [first.id]
+    assert second.id not in [workflow.id for workflow in results]

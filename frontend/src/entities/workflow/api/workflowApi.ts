@@ -14,6 +14,17 @@ interface DataEnvelope<T> {
   data: T;
 }
 
+interface ListEnvelope<T> {
+  data: T[];
+  offset: number;
+  limit: number;
+}
+
+export async function listWorkflows(): Promise<Workflow[]> {
+  const { data } = await apiClient.get<ListEnvelope<Workflow>>("/workflows");
+  return data.data;
+}
+
 export async function createWorkflow(workflow: Workflow): Promise<Workflow> {
   const { data } = await apiClient.post<DataEnvelope<Workflow>>(
     "/workflows",
