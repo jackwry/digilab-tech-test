@@ -6,6 +6,7 @@ const STATUS_TEXT: Record<PersistenceStatus, string> = {
   saving: "Saving…",
   saved: "Saved",
   error: "Failed to save",
+  invalid: "Fix the issues below to save",
   "not-found": "",
 };
 
@@ -33,7 +34,9 @@ export function SaveWorkflowButton({
       {statusText && (
         <span
           className={`text-xs ${
-            status === "error" ? "text-red-600" : "text-slate-500"
+            status === "error" || status === "invalid"
+              ? "text-red-600"
+              : "text-slate-500"
           }`}
         >
           {statusText}

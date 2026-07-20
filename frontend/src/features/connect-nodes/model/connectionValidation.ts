@@ -85,13 +85,24 @@ export function isTypeCompatible(
   return targetType === "Any" || sourceType === targetType;
 }
 
+/**
+ * A node may reuse the same handle id for both an input and an output (e.g.
+ * `Transform`'s `dataset` input and `dataset` output) — searching a flat
+ * concatenation of the two lists would silently return whichever comes
+ * first, misresolving the other one. `prefer` searches the expected list
+ * first (`"output"` for a connection's source handle, `"input"` for its
+ * target) so a same-id pair still resolves to the right handle.
+ */
 function findHandle(
   node: ConnectionValidationNode | undefined,
-  handleId: string | null | undefined
+  handleId: string | null | undefined,
+  prefer: "input" | "output"
 ): HandleDefinition | undefined {
-  return (node?.inputs ?? [])
-    .concat(node?.outputs ?? [])
-    .find((handle) => handle.id === handleId);
+  const ordered =
+    prefer === "output"
+      ? (node?.outputs ?? []).concat(node?.inputs ?? [])
+      : (node?.inputs ?? []).concat(node?.outputs ?? []);
+  return ordered.find((handle) => handle.id === handleId);
 }
 
 /**
@@ -137,8 +148,8 @@ export function validateConnection(
 
   const sourceNode = nodes.find((node) => node.id === source);
   const targetNode = nodes.find((node) => node.id === target);
-  const sourceHandle = findHandle(sourceNode, sourceHandleId);
-  const targetHandle = findHandle(targetNode, targetHandleId);
+  const sourceHandle = findHandle(sourceNode, sourceHandleId, "output");
+  const targetHandle = findHandle(targetNode, targetHandleId, "input");
 
   if (!sourceNode || !targetNode) {
     return {

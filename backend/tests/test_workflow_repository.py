@@ -77,7 +77,9 @@ def test_get_round_trips_a_created_workflow(repo: WorkflowRepository) -> None:
                     label="Load",
                     inputs=[],
                     outputs=[
-                        HandleDefinition(id="dataset", label="Dataset", type="Dataset")
+                        HandleDefinition(
+                            id="dataset", label="Dataset", io="output", type="Dataset"
+                        )
                     ],
                 ),
             )

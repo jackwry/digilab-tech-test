@@ -151,3 +151,62 @@ def test_list_workflows_rejects_a_limit_above_fifty(client: TestClient) -> None:
     response = client.get("/workflows", params={"limit": 51})
 
     assert response.status_code == 422
+
+
+def duplicate_node_payload() -> dict:
+    node = {
+        "id": "n1",
+        "type": "Transform",
+        "position": {"x": 0, "y": 0},
+        "data": {"label": "Node", "inputs": [], "outputs": []},
+    }
+    return {"name": "demo", "nodes": [node, node], "edges": []}
+
+
+def test_create_workflow_rejects_an_invalid_workflow(client: TestClient) -> None:
+    response = client.post("/workflows", json=duplicate_node_payload())
+
+    assert response.status_code == 422
+    body = response.json()
+    assert any(e["code"] == "DUPLICATE_NODE_ID" for e in body["errors"])
+
+
+def test_create_workflow_does_not_save_an_invalid_workflow(
+    client: TestClient,
+) -> None:
+    client.post("/workflows", json=duplicate_node_payload())
+
+    response = client.get("/workflows")
+
+    assert response.json()["data"] == []
+
+
+def test_create_workflow_succeeds_for_a_valid_workflow(client: TestClient) -> None:
+    response = client.post(
+        "/workflows", json={"name": "demo", "nodes": [], "edges": []}
+    )
+
+    assert response.status_code == 201
+
+
+def test_update_workflow_rejects_an_invalid_workflow(client: TestClient) -> None:
+    created = create_demo_workflow(client)
+
+    response = client.put(
+        f"/workflows/{created['id']}", json=duplicate_node_payload()
+    )
+
+    assert response.status_code == 422
+    body = response.json()
+    assert any(e["code"] == "DUPLICATE_NODE_ID" for e in body["errors"])
+
+
+def test_update_workflow_does_not_change_the_stored_workflow_when_invalid(
+    client: TestClient,
+) -> None:
+    created = create_demo_workflow(client)
+
+    client.put(f"/workflows/{created['id']}", json=duplicate_node_payload())
+
+    fetched = client.get(f"/workflows/{created['id']}")
+    assert fetched.json()["data"]["nodes"] == []

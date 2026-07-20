@@ -125,6 +125,23 @@ describe("validateConnection", () => {
     expect(result).toEqual({ valid: true });
   });
 
+  it("accepts a connection from a node whose output shares its handle id with one of its own inputs", () => {
+    // `transform-1` has an input AND an output both id'd "dataset" — a
+    // naive input-then-output lookup would resolve its own output handle
+    // to the input one and misreport this as backwards.
+    const result = validateConnection(
+      {
+        source: "transform-1",
+        sourceHandle: "dataset",
+        target: "model-1",
+        targetHandle: "dataset",
+      },
+      [transform, model],
+      []
+    );
+    expect(result).toEqual({ valid: true });
+  });
+
   it("accepts a connection into an Any-typed handle", () => {
     const result = validateConnection(
       {
