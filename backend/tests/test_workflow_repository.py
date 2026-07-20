@@ -166,3 +166,20 @@ def test_list_all_orders_by_updated_at_descending(
     results = repo.list_all()
 
     assert [workflow.id for workflow in results] == [first.id, second.id]
+
+
+def test_list_all_respects_limit(repo: WorkflowRepository) -> None:
+    repo.create(make_workflow(name="first"))
+    repo.create(make_workflow(name="second"))
+
+    assert len(repo.list_all(limit=1)) == 1
+
+
+def test_list_all_respects_offset(repo: WorkflowRepository) -> None:
+    first = repo.create(make_workflow(name="first"))
+    second = repo.create(make_workflow(name="second"))
+
+    results = repo.list_all(offset=1, limit=1)
+
+    assert [workflow.id for workflow in results] == [first.id]
+    assert second.id not in [workflow.id for workflow in results]

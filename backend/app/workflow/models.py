@@ -7,6 +7,7 @@ justify it, but keep the two sides aligned (see the README note on type
 alignment).
 """
 
+from datetime import datetime
 from typing import Literal, Optional
 
 from app.dto import CamelModel
@@ -57,9 +58,7 @@ class Workflow(CamelModel):
     name: str
     nodes: list[WorkflowNode] = []
     edges: list[WorkflowEdge] = []
-    # Server-assigned, ISO-8601 (JAC-13): set on create, refreshed on update.
-    # Drives the homepage's "most recently updated first" ordering.
-    updated_at: Optional[str] = None
+    updated_at: Optional[datetime] = None
 
 
 class ValidationIssue(CamelModel):

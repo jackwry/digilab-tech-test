@@ -20,8 +20,8 @@ CREATE TABLE IF NOT EXISTS workflows (
 """
 
 
-def _now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 class WorkflowNotFoundError(Exception):
@@ -49,7 +49,7 @@ class WorkflowRepository:
         stored = workflow.model_copy(update={"id": uuid.uuid4().hex, "updated_at": now})
         self._conn.execute(
             "INSERT INTO workflows (id, payload, updated_at) VALUES (?, ?, ?)",
-            (stored.id, stored.model_dump_json(by_alias=True), now),
+            (stored.id, stored.model_dump_json(by_alias=True), now.isoformat()),
         )
         return stored
 
@@ -68,15 +68,16 @@ class WorkflowRepository:
         stored = workflow.model_copy(update={"id": workflow_id, "updated_at": now})
         cursor = self._conn.execute(
             "UPDATE workflows SET payload = ?, updated_at = ? WHERE id = ?",
-            (stored.model_dump_json(by_alias=True), now, workflow_id),
+            (stored.model_dump_json(by_alias=True), now.isoformat(), workflow_id),
         )
         if cursor.rowcount == 0:
             raise WorkflowNotFoundError(workflow_id)
         return stored
 
-    def list_all(self) -> list[Workflow]:
-        """Fetch every workflow, most recently updated first."""
+    def list_all(self, offset: int = 0, limit: int = 50) -> list[Workflow]:
+        """Fetch a page of workflows, most recently updated first."""
         rows = self._conn.execute(
-            "SELECT payload FROM workflows ORDER BY updated_at DESC"
+            "SELECT payload FROM workflows ORDER BY updated_at DESC LIMIT ? OFFSET ?",
+            (limit, offset),
         ).fetchall()
         return [Workflow.model_validate_json(row["payload"]) for row in rows]
