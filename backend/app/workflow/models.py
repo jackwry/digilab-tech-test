@@ -19,6 +19,7 @@ NodeType = Literal["DataSource", "Transform", "Model"]
 class HandleDefinition(CamelModel):
     id: str
     label: str
+    io: Literal["input", "output"]
     type: DataType
     required: bool = False
 

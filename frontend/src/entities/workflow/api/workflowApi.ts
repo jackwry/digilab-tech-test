@@ -7,7 +7,9 @@ import type { Workflow } from "../model/types";
  *
  * The backend wraps every response in a `{ data: ... }` DTO envelope
  * (JAC-12), so each call unwraps `response.data.data` rather than
- * `response.data`.
+ * `response.data`. `POST`/`PUT` also run whole-workflow validation
+ * server-side (JAC-16) and reject the request (422) if it fails — callers
+ * only ever get back a workflow that was actually saved.
  */
 
 interface DataEnvelope<T> {

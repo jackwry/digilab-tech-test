@@ -5,6 +5,7 @@ import {
   SaveWorkflowButton,
   useWorkflowPersistence,
 } from "@/features/persist-workflow";
+import { useValidationWarnings, ValidationWarnings } from "@/features/validate-workflow";
 import { WorkflowCanvas } from "@/widgets/workflow-canvas";
 import { useWorkflowStore } from "@/entities/workflow";
 
@@ -14,7 +15,8 @@ export function WorkflowEditorPage() {
   const { workflowId } = useParams<{ workflowId: string }>();
   const setNodes = useWorkflowStore((state) => state.setNodes);
   const handleAddNode = useAddNode(setNodes);
-  const { status, save } = useWorkflowPersistence(workflowId!);
+  const { warnings, pushWarning, dismiss } = useValidationWarnings();
+  const { status, save } = useWorkflowPersistence(workflowId!, pushWarning);
 
   if (status === "not-found") {
     return (
@@ -29,7 +31,6 @@ export function WorkflowEditorPage() {
 
   return (
     <div className="relative h-full w-full">
-      {/* TODO (candidate): a validate action (brief §C4). */}
       <div className="absolute top-3 left-3 z-10 flex flex-col items-start gap-3">
         <div className="flex items-center gap-3 rounded-lg bg-white/90 p-3 shadow">
           <Link to="/" className="text-sm text-slate-500 hover:underline">
@@ -45,6 +46,7 @@ export function WorkflowEditorPage() {
       </div>
 
       <WorkflowCanvas />
+      <ValidationWarnings warnings={warnings} onDismiss={dismiss} />
     </div>
   );
 }

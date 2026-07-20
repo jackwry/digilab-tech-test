@@ -50,9 +50,10 @@ class ErrorDetail(CamelModel):
     """A single coded, human-readable error.
 
     `extra="allow"`: callers can pass whatever endpoint-specific extra
-    fields are useful (e.g. a validation error's `loc`) and they're
-    serialised alongside `code`/`message` rather than needing a new field
-    declared here every time one comes up.
+    fields are useful (e.g. a validation error's `loc`, or a workflow
+    diagnostic's `nodeId`/`edgeId`) and they're serialised alongside
+    `code`/`message` rather than needing a new field declared here every
+    time one comes up.
     """
 
     model_config = ConfigDict(

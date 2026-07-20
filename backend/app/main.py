@@ -12,6 +12,7 @@ from app.dto import ErrorDetail, ErrorResponse
 from app.health.router import router as health_router
 from app.workflow.repository import WorkflowNotFoundError, init_db
 from app.workflow.router import router as workflow_router
+from app.workflow.validation import WorkflowValidationError
 
 
 @asynccontextmanager
@@ -47,6 +48,26 @@ def handle_workflow_not_found(
         errors=[ErrorDetail(code="WORKFLOW_NOT_FOUND", message=str(exc))]
     )
     return JSONResponse(status_code=404, content=body.model_dump(by_alias=True))
+
+
+@app.exception_handler(WorkflowValidationError)
+def handle_workflow_validation_error(
+    request: Request, exc: WorkflowValidationError
+) -> JSONResponse:
+    body = ErrorResponse(
+        errors=[
+            ErrorDetail.model_validate(
+                {
+                    "code": issue.code,
+                    "message": issue.message,
+                    "nodeId": issue.node_id,
+                    "edgeId": issue.edge_id,
+                }
+            )
+            for issue in exc.issues
+        ]
+    )
+    return JSONResponse(status_code=422, content=body.model_dump(by_alias=True))
 
 
 @app.exception_handler(RequestValidationError)

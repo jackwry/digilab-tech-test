@@ -1,7 +1,7 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { Workflow } from "@/entities/workflow";
+import type { FlowNode, Workflow } from "@/entities/workflow";
 
 const { getWorkflow, updateWorkflow } = vi.hoisted(() => ({
   getWorkflow: vi.fn(),
@@ -27,10 +27,29 @@ function makeWorkflow(overrides: Partial<Workflow> = {}): Workflow {
   };
 }
 
+function makeNode(id: string): FlowNode {
+  return {
+    id,
+    type: "workflowNode",
+    position: { x: 0, y: 0 },
+    data: { label: id, nodeType: "Transform", inputs: [], outputs: [] },
+  };
+}
+
 function notFoundError(): Error {
   return Object.assign(new Error("not found"), {
     isAxiosError: true,
     response: { status: 404 },
+  });
+}
+
+function apiError(
+  status: number,
+  errors: { code: string; message: string; level?: string }[]
+): Error {
+  return Object.assign(new Error("request failed"), {
+    isAxiosError: true,
+    response: { status, data: { errors } },
   });
 }
 
@@ -46,7 +65,9 @@ describe("useWorkflowPersistence", () => {
       makeWorkflow({ id: "server-1", name: "My workflow" })
     );
 
-    const { result } = renderHook(() => useWorkflowPersistence("server-1"));
+    const { result } = renderHook(() =>
+      useWorkflowPersistence("server-1", vi.fn())
+    );
 
     await waitFor(() => expect(result.current.status).toBe("idle"));
 
@@ -56,7 +77,9 @@ describe("useWorkflowPersistence", () => {
   it("reports a not-found status when the id 404s", async () => {
     getWorkflow.mockRejectedValue(notFoundError());
 
-    const { result } = renderHook(() => useWorkflowPersistence("missing-id"));
+    const { result } = renderHook(() =>
+      useWorkflowPersistence("missing-id", vi.fn())
+    );
 
     await waitFor(() => expect(result.current.status).toBe("not-found"));
   });
@@ -64,7 +87,9 @@ describe("useWorkflowPersistence", () => {
   it("surfaces an error status when loading fails for a non-404 reason", async () => {
     getWorkflow.mockRejectedValue(new Error("network down"));
 
-    const { result } = renderHook(() => useWorkflowPersistence("server-1"));
+    const { result } = renderHook(() =>
+      useWorkflowPersistence("server-1", vi.fn())
+    );
 
     await waitFor(() => expect(result.current.status).toBe("error"));
 
@@ -75,7 +100,9 @@ describe("useWorkflowPersistence", () => {
     getWorkflow.mockResolvedValue(makeWorkflow({ id: "server-1" }));
     updateWorkflow.mockResolvedValue(makeWorkflow({ id: "server-1" }));
 
-    const { result } = renderHook(() => useWorkflowPersistence("server-1"));
+    const { result } = renderHook(() =>
+      useWorkflowPersistence("server-1", vi.fn())
+    );
     await waitFor(() => expect(result.current.status).toBe("idle"));
 
     await act(async () => {
@@ -95,7 +122,7 @@ describe("useWorkflowPersistence", () => {
     );
 
     const { result, rerender } = renderHook(
-      ({ id }) => useWorkflowPersistence(id),
+      ({ id }) => useWorkflowPersistence(id, vi.fn()),
       { initialProps: { id: "server-1" } }
     );
     await waitFor(() => expect(result.current.status).toBe("idle"));
@@ -103,5 +130,96 @@ describe("useWorkflowPersistence", () => {
 
     rerender({ id: "server-2" });
     await waitFor(() => expect(getWorkflow).toHaveBeenCalledWith("server-2"));
+  });
+
+  it("blocks the save and reports each violation as an error when the workflow fails client-side validation", async () => {
+    getWorkflow.mockResolvedValue(makeWorkflow({ id: "server-1" }));
+    const onWarning = vi.fn();
+
+    const { result } = renderHook(() =>
+      useWorkflowPersistence("server-1", onWarning)
+    );
+    await waitFor(() => expect(result.current.status).toBe("idle"));
+
+    act(() => {
+      useWorkflowStore.setState({
+        nodes: [makeNode("dup"), makeNode("dup")],
+        edges: [],
+      });
+    });
+
+    await act(async () => {
+      await result.current.save();
+    });
+
+    expect(updateWorkflow).not.toHaveBeenCalled();
+    expect(result.current.status).toBe("invalid");
+    expect(onWarning).toHaveBeenCalledWith(
+      expect.stringContaining("dup"),
+      "error"
+    );
+  });
+
+  it("reports each structured API error when the backend rejects an invalid workflow", async () => {
+    getWorkflow.mockResolvedValue(makeWorkflow({ id: "server-1" }));
+    updateWorkflow.mockRejectedValue(
+      apiError(422, [
+        { code: "DUPLICATE_NODE_ID", message: "Backend caught one" },
+      ])
+    );
+    const onWarning = vi.fn();
+
+    const { result } = renderHook(() =>
+      useWorkflowPersistence("server-1", onWarning)
+    );
+    await waitFor(() => expect(result.current.status).toBe("idle"));
+
+    await act(async () => {
+      await result.current.save();
+    });
+
+    expect(result.current.status).toBe("error");
+    expect(onWarning).toHaveBeenCalledWith("Backend caught one", "error");
+  });
+
+  it("reports each structured API error as an error-level warning on a failed save", async () => {
+    getWorkflow.mockResolvedValue(makeWorkflow({ id: "server-1" }));
+    updateWorkflow.mockRejectedValue(
+      apiError(422, [{ code: "VALIDATION_ERROR", message: "name is required" }])
+    );
+    const onWarning = vi.fn();
+
+    const { result } = renderHook(() =>
+      useWorkflowPersistence("server-1", onWarning)
+    );
+    await waitFor(() => expect(result.current.status).toBe("idle"));
+
+    await act(async () => {
+      await result.current.save();
+    });
+
+    expect(result.current.status).toBe("error");
+    expect(onWarning).toHaveBeenCalledWith("name is required", "error");
+  });
+
+  it("falls back to a generic error toast when a failed save has no structured body", async () => {
+    getWorkflow.mockResolvedValue(makeWorkflow({ id: "server-1" }));
+    updateWorkflow.mockRejectedValue(new Error("network down"));
+    const onWarning = vi.fn();
+
+    const { result } = renderHook(() =>
+      useWorkflowPersistence("server-1", onWarning)
+    );
+    await waitFor(() => expect(result.current.status).toBe("idle"));
+
+    await act(async () => {
+      await result.current.save();
+    });
+
+    expect(result.current.status).toBe("error");
+    expect(onWarning).toHaveBeenCalledWith(
+      "Failed to save the workflow.",
+      "error"
+    );
   });
 });

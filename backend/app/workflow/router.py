@@ -6,6 +6,7 @@ from app.db import get_connection
 from app.dto import DataResponse, ListResponse
 from app.workflow.models import Workflow
 from app.workflow.repository import WorkflowRepository
+from app.workflow.validation import WorkflowValidationError, validate_workflow
 
 router = APIRouter(prefix="/workflows", tags=["workflows"])
 
@@ -14,6 +15,17 @@ def get_repository(
     conn: sqlite3.Connection = Depends(get_connection),
 ) -> WorkflowRepository:
     return WorkflowRepository(conn)
+
+
+def _ensure_valid(workflow: Workflow) -> None:
+    """Runs whole-workflow validation (JAC-16) and rejects the request if it
+    fails. The frontend already runs the same rules before ever posting, so
+    the backend isn't expected to see a workflow that fails them — this
+    exists as a second, independent check, not a lenient one, so a workflow
+    that fails it is never saved."""
+    issues = validate_workflow(workflow)
+    if issues:
+        raise WorkflowValidationError(issues)
 
 
 @router.post(
@@ -25,6 +37,7 @@ def create_workflow(
     workflow: Workflow, repo: WorkflowRepository = Depends(get_repository)
 ) -> DataResponse[Workflow]:
     """Create a workflow and return it with a stable, server-assigned identifier."""
+    _ensure_valid(workflow)
     return DataResponse(data=repo.create(workflow))
 
 
@@ -59,4 +72,5 @@ def update_workflow(
     repo: WorkflowRepository = Depends(get_repository),
 ) -> DataResponse[Workflow]:
     """Update an existing workflow. 404s if the id doesn't exist yet (no upsert)."""
+    _ensure_valid(workflow)
     return DataResponse(data=repo.update(workflow_id, workflow))
