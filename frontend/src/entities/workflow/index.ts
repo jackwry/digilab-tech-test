@@ -19,7 +19,13 @@ export { createFlowNode } from "./model/nodeFactory";
 export { useWorkflowStore } from "./model/workflowStore";
 export { flowToWorkflow, workflowToFlow } from "./model/mapping";
 export { initialNodes, initialEdges } from "./model/initialWorkflow";
+export { generateDefaultWorkflowName } from "./model/workflowName";
 
-export { createWorkflow, getWorkflow, updateWorkflow } from "./api/workflowApi";
+export {
+  createWorkflow,
+  getWorkflow,
+  listWorkflows,
+  updateWorkflow,
+} from "./api/workflowApi";
 
 export { WorkflowNodeCard } from "./ui/WorkflowNodeCard";

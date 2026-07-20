@@ -49,6 +49,8 @@ export interface Workflow {
   name: string;
   nodes: WorkflowNode[];
   edges: WorkflowEdge[];
+  /** Server-assigned, ISO-8601. Drives the homepage's "last updated" ordering/display. */
+  updatedAt?: string;
 }
 
 /** A single coded, path-addressed diagnostic (see brief §C4). */

@@ -3,7 +3,7 @@ import sqlite3
 from fastapi import APIRouter, Depends, status
 
 from app.db import get_connection
-from app.dto import DataResponse
+from app.dto import DataResponse, ListResponse
 from app.workflow.models import Workflow
 from app.workflow.repository import WorkflowRepository
 
@@ -26,6 +26,15 @@ def create_workflow(
 ) -> DataResponse[Workflow]:
     """Create a workflow and return it with a stable, server-assigned identifier."""
     return DataResponse(data=repo.create(workflow))
+
+
+@router.get("", response_model=ListResponse[Workflow])
+def list_workflows(
+    repo: WorkflowRepository = Depends(get_repository),
+) -> ListResponse[Workflow]:
+    """List every workflow, most recently updated first (JAC-13 homepage)."""
+    workflows = repo.list_all()
+    return ListResponse(data=workflows, offset=0, limit=len(workflows))
 
 
 @router.get("/{workflow_id}", response_model=DataResponse[Workflow])

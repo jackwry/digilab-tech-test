@@ -57,6 +57,9 @@ class Workflow(CamelModel):
     name: str
     nodes: list[WorkflowNode] = []
     edges: list[WorkflowEdge] = []
+    # Server-assigned, ISO-8601 (JAC-13): set on create, refreshed on update.
+    # Drives the homepage's "most recently updated first" ordering.
+    updated_at: Optional[str] = None
 
 
 class ValidationIssue(CamelModel):
