@@ -1,9 +1,8 @@
 # Backend — Workflow API (FastAPI)
 
-A deliberately small FastAPI starter. It **boots, is CORS-enabled for the
-frontend, and has a passing test suite** — but the workflow endpoints are
-stubs. Designing and building persistence and validation is the exercise (see
-[`../EXERCISE.md`](../EXERCISE.md), sections C3–C6).
+A FastAPI service for persisting and validating workflows: CRUD endpoints
+backed by SQLite, plus whole-workflow validation that mirrors the frontend's
+rules as a second, independent gate rather than a trusting one.
 
 ## Prerequisites
 
@@ -31,38 +30,26 @@ poetry run uvicorn app.main:app --reload --port 8000
 poetry run pytest
 ```
 
-The suite covers the health check and the current (not-yet-implemented)
-behaviour of the workflow endpoints. Replace the workflow tests as you build.
-
 ## Typecheck
 
 ```bash
 poetry run mypy app tests
 ```
 
-## What's provided vs. what's yours
+## What's here
 
-**Provided (so you don't spend time on setup):**
-
-- A runnable FastAPI app (`app/main.py`) with CORS configured for the Vite dev
-  server (`app/config.py`).
-- Starting Pydantic models (`app/models.py`) mirroring the frontend types,
-  serialised as camelCase on the wire.
-- Stubbed workflow routes (`app/routers/workflows.py`) returning `501` with a
-  `# TODO` at each decision point.
-- A health route and a green test suite.
-
-**Yours to design and build:**
-
-- Persistence — in-memory, file, or SQLite (§C3).
-- Full-workflow validation returning structured diagnostics (§C4). Consider a
-  pure module, independent of the web layer, so it's easy to test.
-- Failure/`404` behaviour and error responses (§C5).
-- The concurrent-update decision, written up in the README (§C6).
-
-Everything here is a starting point — change the schema, restructure the app,
-swap tooling. Just keep the frontend and backend contract in step and explain
-material changes.
+- `POST /workflows`, `GET /workflows` (paginated, most recently updated
+  first), `GET /workflows/{id}`, `PUT /workflows/{id}` — backed by a SQLite
+  repository (one row per workflow, JSON payload column; see
+  `app/workflow/repository.py`). Updates are last-write-wins — no optimistic
+  concurrency check.
+- Whole-workflow validation (`app/workflow/validation.py`) runs on every
+  create/update; any violation is rejected with a `422` and nothing is
+  saved. Failures are always reported through a shared `{errors: [...]}`
+  envelope, whether they come from this validation, a `404`, or FastAPI's
+  own request-shape checks.
+- CORS configured for the Vite dev server (`app/config.py`), overridable via
+  `ALLOWED_ORIGINS`.
 
 ## Example requests
 
@@ -70,7 +57,7 @@ material changes.
 # Health
 curl http://localhost:8000/health
 
-# Create a workflow (currently returns 501 — implement POST /workflows)
+# Create a workflow
 curl -X POST http://localhost:8000/workflows \
   -H 'Content-Type: application/json' \
   -d '{"name":"My workflow","nodes":[],"edges":[]}'
@@ -81,19 +68,23 @@ curl -X POST http://localhost:8000/workflows \
 ```
 backend/
 ├── app/
-│   ├── main.py            # FastAPI app + CORS + router registration
-│   ├── config.py          # settings (allowed CORS origins)
-│   ├── models.py          # Pydantic domain models (the wire contract)
-│   └── routers/
-│       ├── health.py      # GET /health
-│       └── workflows.py   # POST/GET/PUT /workflows  (stubbed — build these)
-├── tests/                 # pytest + FastAPI TestClient
-├── pyproject.toml         # Poetry project + dev tooling (pytest, black, flake8, mypy)
-└── Dockerfile             # optional containerised run
+│   ├── main.py             # FastAPI app + CORS + exception handlers
+│   ├── config.py           # settings (CORS origins, database path)
+│   ├── db.py                # SQLite connection (one per request)
+│   ├── dto.py                # response envelopes (DataResponse, ErrorResponse, ...)
+│   ├── health/router.py     # GET /health
+│   └── workflow/
+│       ├── models.py         # Pydantic domain models (the wire contract)
+│       ├── repository.py     # SQLite-backed CRUD
+│       ├── router.py         # POST/GET/PUT /workflows
+│       └── validation.py     # whole-workflow rule checks
+├── tests/                    # pytest + FastAPI TestClient
+├── pyproject.toml            # Poetry project + dev tooling (pytest, black, flake8, mypy)
+└── Dockerfile                # optional containerised run
 ```
 
 ## Docker (optional)
 
 From the repo root, `docker compose up` builds and runs this backend in a
-container (handy if you'd rather not install Python/Poetry). The frontend still
-runs with npm. See the root `README.md`.
+container (handy if you'd rather not install Python/Poetry). The frontend
+still runs with npm. See the root `README.md`.
