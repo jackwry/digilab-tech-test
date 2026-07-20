@@ -31,21 +31,26 @@ function buildProps(
 
 function renderCard(
   props: Partial<NodeProps<FlowNode>> = {},
-  onLabelChange = vi.fn()
+  onLabelChange = vi.fn(),
+  onDelete = vi.fn()
 ) {
   const built = buildProps(props);
   render(
     <ReactFlowProvider>
-      <WorkflowNodeCard {...built} onLabelChange={onLabelChange} />
+      <WorkflowNodeCard
+        {...built}
+        onLabelChange={onLabelChange}
+        onDelete={onDelete}
+      />
     </ReactFlowProvider>
   );
-  return { onLabelChange, id: built.id };
+  return { onLabelChange, onDelete, id: built.id };
 }
 
 /**
  * Mirrors how the real app wires this up: `onLabelChange` feeds back into
  * `setNodes`, so the parent re-renders the card with the committed label as
- * its new `data` prop (see `useWorkflowCanvasState` / `WorkflowEditorPage`).
+ * its new `data` prop (see `useWorkflowStore` / `WorkflowCanvas`).
  */
 function renderControlledCard(props: Partial<NodeProps<FlowNode>> = {}) {
   const built = buildProps(props);
@@ -76,6 +81,10 @@ function renderControlledCard(props: Partial<NodeProps<FlowNode>> = {}) {
 
 function editButton() {
   return screen.getByRole("button", { name: /edit label/i });
+}
+
+function deleteButton() {
+  return screen.getByRole("button", { name: /delete node/i });
 }
 
 describe("WorkflowNodeCard label editing", () => {
@@ -175,5 +184,24 @@ describe("WorkflowNodeCard label editing", () => {
     await user.keyboard("{Enter}");
 
     expect(onLabelChange).not.toHaveBeenCalled();
+  });
+});
+
+describe("WorkflowNodeCard node deletion", () => {
+  it("renders a delete button that is visible without hovering", () => {
+    renderCard();
+
+    const button = deleteButton();
+    expect(button).toBeInTheDocument();
+    expect(button).not.toHaveClass("opacity-0");
+  });
+
+  it("calls onDelete with the node's id immediately when clicked, with no confirmation step", async () => {
+    const user = userEvent.setup();
+    const { onDelete, id } = renderCard();
+
+    await user.click(deleteButton());
+
+    expect(onDelete).toHaveBeenCalledExactlyOnceWith(id);
   });
 });
