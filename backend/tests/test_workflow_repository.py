@@ -132,6 +132,7 @@ def test_create_sets_updated_at(repo: WorkflowRepository) -> None:
 
 def test_update_refreshes_updated_at(repo: WorkflowRepository) -> None:
     created = repo.create(make_workflow())
+    assert created.id is not None
     assert created.updated_at is not None
 
     updated = repo.update(created.id, make_workflow(name="renamed"))
@@ -159,6 +160,7 @@ def test_list_all_orders_by_updated_at_descending(
     repo: WorkflowRepository,
 ) -> None:
     first = repo.create(make_workflow(name="first"))
+    assert first.id is not None
     second = repo.create(make_workflow(name="second"))
     # Touch `first` again so it becomes the most recently updated.
     repo.update(first.id, make_workflow(name="first-renamed"))
