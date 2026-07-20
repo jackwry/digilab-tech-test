@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { AddNodeToolbar, useAddNode } from "@/features/add-node";
 import {
   SaveWorkflowButton,
+  ServerErrorDialog,
   useWorkflowPersistence,
 } from "@/features/persist-workflow";
 import { useValidationWarnings, ValidationWarnings } from "@/features/validate-workflow";
@@ -16,7 +17,14 @@ export function WorkflowEditorPage() {
   const setNodes = useWorkflowStore((state) => state.setNodes);
   const handleAddNode = useAddNode(setNodes);
   const { warnings, pushWarning, dismiss } = useValidationWarnings();
-  const { status, save } = useWorkflowPersistence(workflowId!, pushWarning);
+  const {
+    status,
+    save,
+    isDirty,
+    lastSavedAt,
+    serverIssue,
+    dismissServerIssue,
+  } = useWorkflowPersistence(workflowId!, pushWarning);
 
   if (status === "not-found") {
     return (
@@ -25,6 +33,31 @@ export function WorkflowEditorPage() {
         <Link to="/" className="text-sm font-medium text-slate-800 underline">
           Back to workflows
         </Link>
+      </div>
+    );
+  }
+
+  if (status === "load-error") {
+    return (
+      <div className="flex h-full w-full flex-col items-center justify-center gap-3">
+        <p className="text-slate-700">
+          Something went wrong loading this workflow.
+        </p>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="rounded-md bg-slate-800 px-3 py-1.5 text-sm font-medium text-white shadow"
+          >
+            Try again
+          </button>
+          <Link
+            to="/"
+            className="text-sm font-medium text-slate-800 underline"
+          >
+            Back to workflows
+          </Link>
+        </div>
       </div>
     );
   }
@@ -39,7 +72,15 @@ export function WorkflowEditorPage() {
           <h1 className="text-md font-semibold text-slate-800">
             Workflow editor
           </h1>
-          <SaveWorkflowButton status={status} onSave={save} />
+        </div>
+
+        <div className="flex items-center gap-3 rounded-lg bg-white/90 p-2 shadow">
+          <SaveWorkflowButton
+            status={status}
+            isDirty={isDirty}
+            lastSavedAt={lastSavedAt}
+            onSave={save}
+          />
         </div>
 
         <AddNodeToolbar onAdd={handleAddNode} />
@@ -47,6 +88,7 @@ export function WorkflowEditorPage() {
 
       <WorkflowCanvas />
       <ValidationWarnings warnings={warnings} onDismiss={dismiss} />
+      {serverIssue && <ServerErrorDialog onDismiss={dismissServerIssue} />}
     </div>
   );
 }
