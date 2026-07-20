@@ -18,6 +18,7 @@ export type NodeType = "DataSource" | "Transform" | "Model";
 export interface HandleDefinition {
   id: string;
   label: string;
+  io: "input" | "output";
   type: DataType;
   required?: boolean;
 }

@@ -3,8 +3,8 @@ import {
   SaveWorkflowButton,
   useWorkflowPersistence,
 } from "@/features/persist-workflow";
-import { useWorkflowStore } from "@/entities/workflow";
 import { WorkflowCanvas } from "@/widgets/workflow-canvas";
+import { useWorkflowStore } from "@/entities/workflow";
 
 /**
  * The single-page workflow editor. A homepage/workflow-list page is coming in

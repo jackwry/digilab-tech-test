@@ -13,7 +13,9 @@ function buildFlowNode(overrides: Partial<FlowNode> = {}): FlowNode {
       label: "Load",
       nodeType: "DataSource",
       inputs: [],
-      outputs: [{ id: "dataset", label: "Dataset", type: "Dataset" }],
+      outputs: [
+        { id: "dataset", label: "Dataset", io: "output", type: "Dataset" },
+      ],
     },
     ...overrides,
   } as FlowNode;
@@ -50,7 +52,14 @@ describe("flowToWorkflow", () => {
           data: {
             label: "Load",
             inputs: [],
-            outputs: [{ id: "dataset", label: "Dataset", type: "Dataset" }],
+            outputs: [
+              {
+                id: "dataset",
+                label: "Dataset",
+                io: "output",
+                type: "Dataset",
+              },
+            ],
           },
         },
       ],
