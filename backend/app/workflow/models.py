@@ -1,7 +1,7 @@
 """Domain models for the workflow API.
 
-These mirror the frontend's `src/types/workflow.ts` so both ends speak the same
-wire contract. They are a STARTING POINT taken from the exercise brief — the
+These mirror the frontend's `src/entities/workflow/model/types.ts` so both ends speak the
+same wire contract. They are a STARTING POINT taken from the exercise brief — the
 precise schema is part of the design problem, so change them where you can
 justify it, but keep the two sides aligned (see the README note on type
 alignment).
@@ -9,22 +9,10 @@ alignment).
 
 from typing import Literal, Optional
 
-from pydantic import BaseModel, ConfigDict
-from pydantic.alias_generators import to_camel
+from app.dto import CamelModel
 
 DataType = Literal["Dataset", "Model", "Any"]
 NodeType = Literal["DataSource", "Transform", "Model"]
-
-
-class CamelModel(BaseModel):
-    """Base model that serialises to camelCase on the wire.
-
-    The browser client uses camelCase field names, so emitting camelCase keeps a
-    single contract across the stack. `populate_by_name=True` means Python code
-    can still build models with their snake_case field names.
-    """
-
-    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
 
 
 class HandleDefinition(CamelModel):
@@ -62,6 +50,10 @@ class WorkflowEdge(CamelModel):
 
 class Workflow(CamelModel):
     id: Optional[str] = None
+    # Client-generated local id (JAC-12 follow-up): stored as-is, distinct from
+    # the server-assigned `id`. Not used for lookup/dedup server-side — the
+    # client is responsible for remembering the `id` it gets back from create.
+    lid: Optional[str] = None
     name: str
     nodes: list[WorkflowNode] = []
     edges: list[WorkflowEdge] = []
