@@ -3,13 +3,79 @@ import type { KeyboardEvent } from "react";
 import { Handle, Position } from "@xyflow/react";
 import type { NodeProps } from "@xyflow/react";
 
+import type { HandleDefinition } from "../model/types";
 import type { FlowNode } from "../model/flowTypes";
 
-const HANDLE_STYLE = { width: 10, height: 10, background: "#64748b" } as const;
+const HANDLE_SIZE = 10;
+
+/**
+ * Each handle row gets its own fixed-height, `position: relative` `<li>`, so
+ * the `Handle` (itself `position: absolute` by default) centers vertically
+ * within *that row* rather than ReactFlow's default of centering on the
+ * whole node — which, before this, visually collided with the node's title
+ * (confirmed during review: both were landing at ~50% of the full card
+ * height). The `<li>` being `w-full` inside a `flex-1` `<ul>` also keeps the
+ * handle's `left: 0` / `right: 0` flush with the card's true edges, not just
+ * wherever the row happens to sit.
+ */
+const HANDLE_ROW_HEIGHT = 20;
+
+/**
+ * The handle itself is a small neutral circle. Every visual property here is
+ * set via inline `style`, not Tailwind classes: ReactFlow's own (unlayered)
+ * stylesheet sets explicit `width`, `height`, `border`, `border-radius`, and
+ * `background-color` on `.react-flow__handle`. Tailwind v4's utilities live
+ * inside `@layer`, and the CSS cascade always ranks unlayered rules above
+ * layered ones regardless of specificity or source order — so `h-*`/
+ * `rounded-*`/`bg-*` classes silently lose to ReactFlow's defaults (confirmed
+ * in-browser: computed size stayed 6px and border-radius stayed 100% even
+ * with those classes applied). Inline style outranks both layers.
+ */
+const HANDLE_BADGE_STYLE = {
+  width: HANDLE_SIZE,
+  height: HANDLE_SIZE,
+  border: "none",
+  borderRadius: "9999px",
+  backgroundColor: "#64748b",
+} as const;
+
+function HandleRow({
+  handle,
+  handleType,
+}: {
+  handle: HandleDefinition;
+  handleType: "target" | "source";
+}) {
+  const isInput = handleType === "target";
+
+  return (
+    <li className="relative w-full" style={{ height: HANDLE_ROW_HEIGHT }}>
+      <Handle
+        id={handle.id}
+        type={handleType}
+        position={isInput ? Position.Left : Position.Right}
+        title={handle.type}
+        style={HANDLE_BADGE_STYLE}
+      >
+        {/* Nested inside the handle itself, but positioned to read inward
+            (toward the node body) rather than over the handle's circle. */}
+        <span
+          className={`pointer-events-none absolute top-1/2 -translate-y-1/2 text-[10px] whitespace-nowrap text-slate-600 ${
+            isInput ? "left-full ml-1.5" : "right-full mr-1.5"
+          }`}
+        >
+          {handle.label}
+        </span>
+      </Handle>
+    </li>
+  );
+}
 
 interface WorkflowNodeCardProps extends NodeProps<FlowNode> {
   /** Called with (id, label) when an edit to the node's label is committed. */
   onLabelChange?: (id: string, label: string) => void;
+  /** Called with (id) when the node's delete icon is clicked. No confirmation (JAC-19). */
+  onDelete?: (id: string) => void;
 }
 
 function EditIcon() {
@@ -30,19 +96,36 @@ function EditIcon() {
   );
 }
 
+function DeleteIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 16 16"
+      width="10"
+      height="10"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    >
+      <path d="M3 3l10 10M13 3L3 13" />
+    </svg>
+  );
+}
+
 /**
  * A basic custom node showing its type, label, and input/output handles with
  * their data types. The label is editable (JAC-9): a hover-revealed edit
  * icon at the end of the label switches it to a text input. Enter/blur
  * commits, Escape cancels. An empty label reverts rather than committing,
- * since blank node labels aren't meaningful in the canvas.
- *
- * TODO (candidate): this is intentionally minimal (brief §C1).
+ * since blank node labels aren't meaningful in the canvas. The node can be
+ * deleted (JAC-19).
  */
 export function WorkflowNodeCard({
   id,
   data,
   onLabelChange,
+  onDelete,
 }: WorkflowNodeCardProps) {
   const { label, nodeType, inputs, outputs } = data;
   const [isEditing, setIsEditing] = useState(false);
@@ -87,8 +170,16 @@ export function WorkflowNodeCard({
 
   return (
     <div className="min-w-44 rounded-lg border-2 border-slate-700 bg-white shadow-sm">
-      <div className="rounded-t-md bg-slate-700 px-3 py-1 text-[10px] font-semibold tracking-wide text-white uppercase">
-        {nodeType}
+      <div className="flex items-center justify-between gap-2 rounded-t-md bg-slate-700 px-3 py-1 text-[10px] font-semibold tracking-wide text-white uppercase">
+        <span>{nodeType}</span>
+        <button
+          type="button"
+          aria-label="Delete node"
+          onClick={() => onDelete?.(id)}
+          className="nodrag nopan shrink-0 rounded p-0.5 text-white/70 normal-case hover:bg-white/20 hover:text-white"
+        >
+          <DeleteIcon />
+        </button>
       </div>
 
       {isEditing ? (
@@ -115,47 +206,18 @@ export function WorkflowNodeCard({
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-3 px-3 pb-2 text-[10px] text-slate-500">
-        <ul>
+      <div className="flex gap-3 pb-3">
+        <ul className="flex flex-1 flex-col gap-2">
           {inputs.map((handle) => (
-            <li key={handle.id}>
-              ◦ {handle.label}: {handle.type}
-            </li>
+            <HandleRow key={handle.id} handle={handle} handleType="target" />
           ))}
         </ul>
-        <ul className="text-right">
+        <ul className="flex flex-1 flex-col gap-2">
           {outputs.map((handle) => (
-            <li key={handle.id}>
-              {handle.label}: {handle.type} ◦
-            </li>
+            <HandleRow key={handle.id} handle={handle} handleType="source" />
           ))}
         </ul>
       </div>
-
-      {inputs.map((handle, index) => (
-        <Handle
-          key={handle.id}
-          id={handle.id}
-          type="target"
-          position={Position.Left}
-          style={{
-            ...HANDLE_STYLE,
-            top: `${((index + 1) / (inputs.length + 1)) * 100}%`,
-          }}
-        />
-      ))}
-      {outputs.map((handle, index) => (
-        <Handle
-          key={handle.id}
-          id={handle.id}
-          type="source"
-          position={Position.Right}
-          style={{
-            ...HANDLE_STYLE,
-            top: `${((index + 1) / (outputs.length + 1)) * 100}%`,
-          }}
-        />
-      ))}
     </div>
   );
 }
