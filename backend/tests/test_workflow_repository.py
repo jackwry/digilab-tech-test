@@ -51,6 +51,12 @@ def test_create_ignores_a_client_supplied_id(repo: WorkflowRepository) -> None:
     assert created.id != "client-supplied"
 
 
+def test_create_preserves_a_client_supplied_lid(repo: WorkflowRepository) -> None:
+    created = repo.create(make_workflow(lid="local-1"))
+    assert created.lid == "local-1"
+    assert created.id != "local-1"
+
+
 def test_create_returns_two_distinct_ids_for_two_workflows(
     repo: WorkflowRepository,
 ) -> None:

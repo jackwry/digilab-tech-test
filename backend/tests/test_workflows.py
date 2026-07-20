@@ -38,6 +38,20 @@ def test_create_workflow_assigns_id_ignoring_any_client_supplied_one(
     assert response.json()["data"]["id"] != "client-supplied"
 
 
+def test_create_workflow_stores_and_returns_the_client_supplied_lid(
+    client: TestClient,
+) -> None:
+    response = client.post(
+        "/workflows",
+        json={"lid": "local-1", "name": "demo", "nodes": [], "edges": []},
+    )
+
+    assert response.status_code == 201
+    body = response.json()["data"]
+    assert body["lid"] == "local-1"
+    assert body["id"] != "local-1"
+
+
 def test_create_workflow_missing_name_returns_422_dto_error(
     client: TestClient,
 ) -> None:

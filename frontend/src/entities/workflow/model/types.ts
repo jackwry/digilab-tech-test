@@ -43,6 +43,8 @@ export interface WorkflowEdge {
 
 export interface Workflow {
   id?: string;
+  /** Client-generated local id, distinct from the server-assigned `id` — see `workflowApi.ts`. */
+  lid?: string;
   name: string;
   nodes: WorkflowNode[];
   edges: WorkflowEdge[];

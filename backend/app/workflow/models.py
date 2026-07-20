@@ -50,6 +50,10 @@ class WorkflowEdge(CamelModel):
 
 class Workflow(CamelModel):
     id: Optional[str] = None
+    # Client-generated local id (JAC-12 follow-up): stored as-is, distinct from
+    # the server-assigned `id`. Not used for lookup/dedup server-side — the
+    # client is responsible for remembering the `id` it gets back from create.
+    lid: Optional[str] = None
     name: str
     nodes: list[WorkflowNode] = []
     edges: list[WorkflowEdge] = []

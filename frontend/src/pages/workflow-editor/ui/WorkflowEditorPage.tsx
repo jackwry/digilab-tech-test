@@ -1,4 +1,8 @@
 import { AddNodeToolbar, useAddNode } from "@/features/add-node";
+import {
+  SaveWorkflowButton,
+  useWorkflowPersistence,
+} from "@/features/persist-workflow";
 import { useWorkflowStore } from "@/entities/workflow";
 import { WorkflowCanvas } from "@/widgets/workflow-canvas";
 
@@ -10,16 +14,17 @@ import { WorkflowCanvas } from "@/widgets/workflow-canvas";
 export function WorkflowEditorPage() {
   const setNodes = useWorkflowStore((state) => state.setNodes);
   const handleAddNode = useAddNode(setNodes);
+  const { status, save } = useWorkflowPersistence();
 
   return (
     <div className="relative h-full w-full">
-      {/* TODO (candidate): a save/validate action, and a clear status
-          indicator (unsaved / saving / saved / error). */}
+      {/* TODO (candidate): a validate action (brief §C4). */}
       <div className="absolute top-3 left-3 z-10 flex flex-col items-start gap-3">
-        <div className="rounded-lg bg-white/90 p-3 shadow">
+        <div className="flex items-center gap-3 rounded-lg bg-white/90 p-3 shadow">
           <h1 className="text-md font-semibold text-slate-800">
             Workflow editor
           </h1>
+          <SaveWorkflowButton status={status} onSave={save} />
         </div>
 
         <AddNodeToolbar onAdd={handleAddNode} />
