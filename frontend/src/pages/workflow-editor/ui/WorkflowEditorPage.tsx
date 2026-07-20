@@ -1,4 +1,5 @@
 import { AddNodeToolbar, useAddNode } from "@/features/add-node";
+import { useConnectNodes } from "@/features/connect-nodes";
 import { useUpdateNodeLabel } from "@/features/edit-node-label";
 import {
   WorkflowCanvas,
@@ -11,10 +12,15 @@ import {
  * be introduced in `app/` and this page will stop being the sole one rendered.
  */
 export function WorkflowEditorPage() {
-  const { nodes, edges, setNodes, onNodesChange, onEdgesChange, onConnect } =
+  const { nodes, edges, setNodes, setEdges, onNodesChange, onEdgesChange } =
     useWorkflowCanvasState();
   const handleAddNode = useAddNode(setNodes);
   const handleLabelChange = useUpdateNodeLabel(setNodes);
+  const { onConnectEnd, warning: connectionWarning } = useConnectNodes(
+    nodes,
+    edges,
+    setEdges
+  );
 
   return (
     <div className="relative h-full w-full">
@@ -35,8 +41,9 @@ export function WorkflowEditorPage() {
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
+        onConnectEnd={onConnectEnd}
         onLabelChange={handleLabelChange}
+        connectionWarning={connectionWarning}
       />
     </div>
   );

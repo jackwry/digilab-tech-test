@@ -23,9 +23,6 @@ export async function updateWorkflow(
   id: string,
   workflow: Workflow
 ): Promise<Workflow> {
-  const { data } = await apiClient.put<Workflow>(
-    `/workflows/${id}`,
-    workflow
-  );
+  const { data } = await apiClient.put<Workflow>(`/workflows/${id}`, workflow);
   return data;
 }

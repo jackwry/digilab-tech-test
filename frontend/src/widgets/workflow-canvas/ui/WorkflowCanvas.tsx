@@ -6,7 +6,7 @@ import {
   ReactFlow,
   type NodeProps,
   type NodeTypes,
-  type OnConnect,
+  type OnConnectEnd,
   type OnEdgesChange,
   type OnNodesChange,
 } from "@xyflow/react";
@@ -16,14 +16,19 @@ import {
   type FlowEdge,
   type FlowNode,
 } from "@/entities/workflow";
+import {
+  ConnectionWarning,
+  type UseConnectNodesResult,
+} from "@/features/connect-nodes";
 
 interface WorkflowCanvasProps {
   nodes: FlowNode[];
   edges: FlowEdge[];
   onNodesChange: OnNodesChange<FlowNode>;
   onEdgesChange: OnEdgesChange<FlowEdge>;
-  onConnect: OnConnect;
+  onConnectEnd: OnConnectEnd;
   onLabelChange: (id: string, label: string) => void;
+  connectionWarning: UseConnectNodesResult["warning"];
 }
 
 /** The ReactFlow canvas. Controlled — node/edge state lives in the parent (see `useWorkflowCanvasState`). */
@@ -32,8 +37,9 @@ export function WorkflowCanvas({
   edges,
   onNodesChange,
   onEdgesChange,
-  onConnect,
+  onConnectEnd,
   onLabelChange,
+  connectionWarning,
 }: WorkflowCanvasProps) {
   const nodeTypes = useMemo<NodeTypes>(
     () => ({
@@ -45,18 +51,21 @@ export function WorkflowCanvas({
   );
 
   return (
-    <ReactFlow<FlowNode, FlowEdge>
-      nodes={nodes}
-      edges={edges}
-      onNodesChange={onNodesChange}
-      onEdgesChange={onEdgesChange}
-      onConnect={onConnect}
-      nodeTypes={nodeTypes}
-      fitView
-    >
-      <Background />
-      <Controls />
-      <MiniMap />
-    </ReactFlow>
+    <>
+      <ReactFlow<FlowNode, FlowEdge>
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onConnectEnd={onConnectEnd}
+        nodeTypes={nodeTypes}
+        fitView
+      >
+        <Background />
+        <Controls />
+        <MiniMap />
+      </ReactFlow>
+      <ConnectionWarning warning={connectionWarning} />
+    </>
   );
 }
