@@ -10,6 +10,8 @@ const HANDLE_STYLE = { width: 10, height: 10, background: "#64748b" } as const;
 interface WorkflowNodeCardProps extends NodeProps<FlowNode> {
   /** Called with (id, label) when an edit to the node's label is committed. */
   onLabelChange?: (id: string, label: string) => void;
+  /** Called with (id) when the node's delete icon is clicked. No confirmation (JAC-19). */
+  onDelete?: (id: string) => void;
 }
 
 function EditIcon() {
@@ -30,12 +32,32 @@ function EditIcon() {
   );
 }
 
+function DeleteIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 16 16"
+      width="10"
+      height="10"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    >
+      <path d="M3 3l10 10M13 3L3 13" />
+    </svg>
+  );
+}
+
 /**
  * A basic custom node showing its type, label, and input/output handles with
  * their data types. The label is editable (JAC-9): a hover-revealed edit
  * icon at the end of the label switches it to a text input. Enter/blur
  * commits, Escape cancels. An empty label reverts rather than committing,
- * since blank node labels aren't meaningful in the canvas.
+ * since blank node labels aren't meaningful in the canvas. The node can be
+ * deleted (JAC-19) via an always-visible cross icon in the header —
+ * unlike the edit icon, it isn't hover-gated, per the ticket's explicit
+ * spec, and deletes immediately with no confirmation.
  *
  * TODO (candidate): this is intentionally minimal (brief §C1).
  */
@@ -43,6 +65,7 @@ export function WorkflowNodeCard({
   id,
   data,
   onLabelChange,
+  onDelete,
 }: WorkflowNodeCardProps) {
   const { label, nodeType, inputs, outputs } = data;
   const [isEditing, setIsEditing] = useState(false);
@@ -87,8 +110,16 @@ export function WorkflowNodeCard({
 
   return (
     <div className="min-w-44 rounded-lg border-2 border-slate-700 bg-white shadow-sm">
-      <div className="rounded-t-md bg-slate-700 px-3 py-1 text-[10px] font-semibold tracking-wide text-white uppercase">
-        {nodeType}
+      <div className="flex items-center justify-between gap-2 rounded-t-md bg-slate-700 px-3 py-1 text-[10px] font-semibold tracking-wide text-white uppercase">
+        <span>{nodeType}</span>
+        <button
+          type="button"
+          aria-label="Delete node"
+          onClick={() => onDelete?.(id)}
+          className="nodrag nopan shrink-0 rounded p-0.5 text-white/70 normal-case hover:bg-white/20 hover:text-white"
+        >
+          <DeleteIcon />
+        </button>
       </div>
 
       {isEditing ? (
