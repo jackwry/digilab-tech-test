@@ -25,14 +25,15 @@ function makeNode(
               {
                 id: "dataset",
                 label: "Dataset",
+                io: "input",
                 type: "Dataset",
                 required: true,
               },
             ],
       outputs:
         nodeType === "Model"
-          ? [{ id: "model", label: "Model", type: "Model" }]
-          : [{ id: "dataset", label: "Dataset", type: "Dataset" }],
+          ? [{ id: "model", label: "Model", io: "output", type: "Model" }]
+          : [{ id: "dataset", label: "Dataset", io: "output", type: "Dataset" }],
       ...overrides,
     },
   };

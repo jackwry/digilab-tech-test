@@ -17,7 +17,7 @@ describe("useConnectionWarning", () => {
     expect(result.current.warning).toBeNull();
   });
 
-  it("shows the message at the given point when triggered", () => {
+  it("shows the message at the given point when triggered, starting in the enter phase", () => {
     const { result } = renderHook(() => useConnectionWarning());
 
     act(() => {
@@ -31,7 +31,46 @@ describe("useConnectionWarning", () => {
       message: "Cannot connect Model to Dataset.",
       x: 120,
       y: 340,
+      phase: "enter",
     });
+  });
+
+  it("flips to the visible phase on the next tick", () => {
+    const { result } = renderHook(() => useConnectionWarning());
+
+    act(() => {
+      result.current.showWarning("Cannot connect Model to Dataset.", {
+        x: 120,
+        y: 340,
+      });
+    });
+    act(() => {
+      vi.advanceTimersByTime(0);
+    });
+
+    expect(result.current.warning?.phase).toBe("visible");
+  });
+
+  it("flips to the exit phase shortly before clearing", () => {
+    const { result } = renderHook(() => useConnectionWarning());
+
+    act(() => {
+      result.current.showWarning("A node cannot connect to itself.", {
+        x: 0,
+        y: 0,
+      });
+    });
+
+    act(() => {
+      vi.advanceTimersByTime(2849);
+    });
+    expect(result.current.warning?.phase).toBe("visible");
+
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(result.current.warning?.phase).toBe("exit");
+    expect(result.current.warning).not.toBeNull();
   });
 
   it("clears itself after 3 seconds", () => {

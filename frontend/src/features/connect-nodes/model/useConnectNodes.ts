@@ -59,6 +59,7 @@ export function useConnectNodes(
 
       const nodeLookup = nodes.map((node) => ({
         id: node.id,
+        label: node.data.label,
         inputs: node.data.inputs,
         outputs: node.data.outputs,
       }));
