@@ -6,48 +6,52 @@ import {
   ReactFlow,
   type NodeProps,
   type NodeTypes,
-  type OnConnectEnd,
-  type OnEdgesChange,
-  type OnNodesChange,
 } from "@xyflow/react";
 
 import {
   WorkflowNodeCard,
+  useWorkflowStore,
   type FlowEdge,
   type FlowNode,
 } from "@/entities/workflow";
-import {
-  ConnectionWarning,
-  type UseConnectNodesResult,
-} from "@/features/connect-nodes";
+import { useDeleteNode } from "@/features/delete-node";
+import { useUpdateNodeLabel } from "@/features/edit-node-label";
+import { ConnectionWarning, useConnectNodes } from "@/features/connect-nodes";
 
-interface WorkflowCanvasProps {
-  nodes: FlowNode[];
-  edges: FlowEdge[];
-  onNodesChange: OnNodesChange<FlowNode>;
-  onEdgesChange: OnEdgesChange<FlowEdge>;
-  onConnectEnd: OnConnectEnd;
-  onLabelChange: (id: string, label: string) => void;
-  connectionWarning: UseConnectNodesResult["warning"];
-}
+/**
+ * The ReactFlow canvas. Reads/writes canvas state directly from
+ * `useWorkflowStore` (moved out of a page-drilled hook in JAC-19). Wires up
+ * `onLabelChange`/`onDelete` itself since both are only ever consumed by the
+ * node card this canvas renders — threading them through the page as props
+ * would just be passthrough.
+ */
+export function WorkflowCanvas() {
+  const nodes = useWorkflowStore((state) => state.nodes);
+  const edges = useWorkflowStore((state) => state.edges);
+  const setNodes = useWorkflowStore((state) => state.setNodes);
+  const setEdges = useWorkflowStore((state) => state.setEdges);
+  const onNodesChange = useWorkflowStore((state) => state.onNodesChange);
+  const onEdgesChange = useWorkflowStore((state) => state.onEdgesChange);
 
-/** The ReactFlow canvas. Controlled — node/edge state lives in the parent (see `useWorkflowCanvasState`). */
-export function WorkflowCanvas({
-  nodes,
-  edges,
-  onNodesChange,
-  onEdgesChange,
-  onConnectEnd,
-  onLabelChange,
-  connectionWarning,
-}: WorkflowCanvasProps) {
+  const { onConnectEnd, warning: connectionWarning } = useConnectNodes(
+    nodes,
+    edges,
+    setEdges
+  );
+  const onLabelChange = useUpdateNodeLabel(setNodes);
+  const onDelete = useDeleteNode(setNodes, setEdges);
+
   const nodeTypes = useMemo<NodeTypes>(
     () => ({
       workflowNode: (props: NodeProps<FlowNode>) => (
-        <WorkflowNodeCard {...props} onLabelChange={onLabelChange} />
+        <WorkflowNodeCard
+          {...props}
+          onLabelChange={onLabelChange}
+          onDelete={onDelete}
+        />
       ),
     }),
-    [onLabelChange]
+    [onLabelChange, onDelete]
   );
 
   return (

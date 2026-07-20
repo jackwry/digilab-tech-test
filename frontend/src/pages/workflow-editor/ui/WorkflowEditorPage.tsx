@@ -1,10 +1,6 @@
 import { AddNodeToolbar, useAddNode } from "@/features/add-node";
-import { useConnectNodes } from "@/features/connect-nodes";
-import { useUpdateNodeLabel } from "@/features/edit-node-label";
-import {
-  WorkflowCanvas,
-  useWorkflowCanvasState,
-} from "@/widgets/workflow-canvas";
+import { WorkflowCanvas } from "@/widgets/workflow-canvas";
+import { useWorkflowStore } from "@/entities/workflow";
 
 /**
  * The single-page workflow editor. A homepage/workflow-list page is coming in
@@ -12,15 +8,8 @@ import {
  * be introduced in `app/` and this page will stop being the sole one rendered.
  */
 export function WorkflowEditorPage() {
-  const { nodes, edges, setNodes, setEdges, onNodesChange, onEdgesChange } =
-    useWorkflowCanvasState();
+  const setNodes = useWorkflowStore((state) => state.setNodes);
   const handleAddNode = useAddNode(setNodes);
-  const handleLabelChange = useUpdateNodeLabel(setNodes);
-  const { onConnectEnd, warning: connectionWarning } = useConnectNodes(
-    nodes,
-    edges,
-    setEdges
-  );
 
   return (
     <div className="relative h-full w-full">
@@ -36,15 +25,7 @@ export function WorkflowEditorPage() {
         <AddNodeToolbar onAdd={handleAddNode} />
       </div>
 
-      <WorkflowCanvas
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnectEnd={onConnectEnd}
-        onLabelChange={handleLabelChange}
-        connectionWarning={connectionWarning}
-      />
+      <WorkflowCanvas />
     </div>
   );
 }
