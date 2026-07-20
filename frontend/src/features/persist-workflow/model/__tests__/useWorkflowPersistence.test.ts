@@ -23,6 +23,7 @@ function makeWorkflow(overrides: Partial<Workflow> = {}): Workflow {
     name: "Untitled workflow",
     nodes: [],
     edges: [],
+    updatedAt: "2026-07-20T09:00:00.000Z",
     ...overrides,
   };
 }
@@ -84,14 +85,14 @@ describe("useWorkflowPersistence", () => {
     await waitFor(() => expect(result.current.status).toBe("not-found"));
   });
 
-  it("surfaces an error status when loading fails for a non-404 reason", async () => {
+  it("surfaces a distinct load-error status when loading fails for a non-404 reason", async () => {
     getWorkflow.mockRejectedValue(new Error("network down"));
 
     const { result } = renderHook(() =>
       useWorkflowPersistence("server-1", vi.fn())
     );
 
-    await waitFor(() => expect(result.current.status).toBe("error"));
+    await waitFor(() => expect(result.current.status).toBe("load-error"));
 
     expect(result.current.error).toBeTruthy();
   });
@@ -221,5 +222,164 @@ describe("useWorkflowPersistence", () => {
       "Failed to save the workflow.",
       "error"
     );
+  });
+
+  it("reports the loaded workflow's last-saved time and starts clean", async () => {
+    getWorkflow.mockResolvedValue(
+      makeWorkflow({ id: "server-1", updatedAt: "2026-07-20T09:00:00.000Z" })
+    );
+
+    const { result } = renderHook(() =>
+      useWorkflowPersistence("server-1", vi.fn())
+    );
+    await waitFor(() => expect(result.current.status).toBe("idle"));
+
+    expect(result.current.lastSavedAt).toBe("2026-07-20T09:00:00.000Z");
+    expect(result.current.isDirty).toBe(false);
+  });
+
+  it("becomes dirty when the canvas changes, and clean again once saved", async () => {
+    getWorkflow.mockResolvedValue(
+      makeWorkflow({ id: "server-1", updatedAt: "2026-07-20T09:00:00.000Z" })
+    );
+    updateWorkflow.mockResolvedValue(
+      makeWorkflow({ id: "server-1", updatedAt: "2026-07-20T09:05:00.000Z" })
+    );
+
+    const { result } = renderHook(() =>
+      useWorkflowPersistence("server-1", vi.fn())
+    );
+    await waitFor(() => expect(result.current.status).toBe("idle"));
+
+    act(() => {
+      useWorkflowStore.setState({ nodes: [makeNode("new-node")], edges: [] });
+    });
+    await waitFor(() => expect(result.current.isDirty).toBe(true));
+
+    await act(async () => {
+      await result.current.save();
+    });
+
+    expect(result.current.isDirty).toBe(false);
+    expect(result.current.lastSavedAt).toBe("2026-07-20T09:05:00.000Z");
+  });
+
+  it("retries a save after a 5xx error and succeeds once the retry succeeds", async () => {
+    getWorkflow.mockResolvedValue(
+      makeWorkflow({ id: "server-1", updatedAt: "2026-07-20T09:00:00.000Z" })
+    );
+    updateWorkflow
+      .mockRejectedValueOnce(apiError(503, []))
+      .mockResolvedValueOnce(
+        makeWorkflow({ id: "server-1", updatedAt: "2026-07-20T09:05:00.000Z" })
+      );
+    const onWarning = vi.fn();
+
+    const { result } = renderHook(() =>
+      useWorkflowPersistence("server-1", onWarning)
+    );
+    await waitFor(() => expect(result.current.status).toBe("idle"));
+
+    vi.useFakeTimers();
+    let savePromise: Promise<void>;
+    act(() => {
+      savePromise = result.current.save();
+    });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(3000);
+    });
+    await act(async () => {
+      await savePromise;
+    });
+    vi.useRealTimers();
+
+    expect(updateWorkflow).toHaveBeenCalledTimes(2);
+    expect(result.current.status).toBe("saved");
+    expect(result.current.lastSavedAt).toBe("2026-07-20T09:05:00.000Z");
+    expect(result.current.serverIssue).toBe(false);
+    expect(onWarning).not.toHaveBeenCalled();
+  });
+
+  it("stops after a 3s and then a 5s retry, and reports a server issue instead of a toast", async () => {
+    getWorkflow.mockResolvedValue(makeWorkflow({ id: "server-1" }));
+    updateWorkflow.mockRejectedValue(apiError(500, []));
+    const onWarning = vi.fn();
+
+    const { result } = renderHook(() =>
+      useWorkflowPersistence("server-1", onWarning)
+    );
+    await waitFor(() => expect(result.current.status).toBe("idle"));
+
+    vi.useFakeTimers();
+    let savePromise: Promise<void>;
+    act(() => {
+      savePromise = result.current.save();
+    });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(3000);
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5000);
+    });
+    await act(async () => {
+      await savePromise;
+    });
+    vi.useRealTimers();
+
+    expect(updateWorkflow).toHaveBeenCalledTimes(3);
+    expect(result.current.status).toBe("error");
+    expect(result.current.serverIssue).toBe(true);
+    expect(onWarning).not.toHaveBeenCalled();
+  });
+
+  it("clears the server issue flag when dismissed", async () => {
+    getWorkflow.mockResolvedValue(makeWorkflow({ id: "server-1" }));
+    updateWorkflow.mockRejectedValue(apiError(500, []));
+
+    const { result } = renderHook(() =>
+      useWorkflowPersistence("server-1", vi.fn())
+    );
+    await waitFor(() => expect(result.current.status).toBe("idle"));
+
+    vi.useFakeTimers();
+    act(() => {
+      result.current.save();
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(3000);
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5000);
+    });
+    vi.useRealTimers();
+    expect(result.current.serverIssue).toBe(true);
+
+    act(() => {
+      result.current.dismissServerIssue();
+    });
+
+    expect(result.current.serverIssue).toBe(false);
+  });
+
+  it("does not retry a non-5xx failure", async () => {
+    getWorkflow.mockResolvedValue(makeWorkflow({ id: "server-1" }));
+    updateWorkflow.mockRejectedValue(
+      apiError(422, [{ code: "VALIDATION_ERROR", message: "name is required" }])
+    );
+    const onWarning = vi.fn();
+
+    const { result } = renderHook(() =>
+      useWorkflowPersistence("server-1", onWarning)
+    );
+    await waitFor(() => expect(result.current.status).toBe("idle"));
+
+    await act(async () => {
+      await result.current.save();
+    });
+
+    expect(updateWorkflow).toHaveBeenCalledTimes(1);
+    expect(result.current.serverIssue).toBe(false);
   });
 });
