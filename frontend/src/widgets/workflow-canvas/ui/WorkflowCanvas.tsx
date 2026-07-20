@@ -16,6 +16,7 @@ import {
 } from "@/entities/workflow";
 import { useDeleteNode } from "@/features/delete-node";
 import { useUpdateNodeLabel } from "@/features/edit-node-label";
+import { ConnectionWarning, useConnectNodes } from "@/features/connect-nodes";
 
 /**
  * The ReactFlow canvas. Reads/writes canvas state directly from
@@ -31,8 +32,12 @@ export function WorkflowCanvas() {
   const setEdges = useWorkflowStore((state) => state.setEdges);
   const onNodesChange = useWorkflowStore((state) => state.onNodesChange);
   const onEdgesChange = useWorkflowStore((state) => state.onEdgesChange);
-  const onConnect = useWorkflowStore((state) => state.onConnect);
 
+  const { onConnectEnd, warning: connectionWarning } = useConnectNodes(
+    nodes,
+    edges,
+    setEdges
+  );
   const onLabelChange = useUpdateNodeLabel(setNodes);
   const onDelete = useDeleteNode(setNodes, setEdges);
 
@@ -50,18 +55,21 @@ export function WorkflowCanvas() {
   );
 
   return (
-    <ReactFlow<FlowNode, FlowEdge>
-      nodes={nodes}
-      edges={edges}
-      onNodesChange={onNodesChange}
-      onEdgesChange={onEdgesChange}
-      onConnect={onConnect}
-      nodeTypes={nodeTypes}
-      fitView
-    >
-      <Background />
-      <Controls />
-      <MiniMap />
-    </ReactFlow>
+    <>
+      <ReactFlow<FlowNode, FlowEdge>
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onConnectEnd={onConnectEnd}
+        nodeTypes={nodeTypes}
+        fitView
+      >
+        <Background />
+        <Controls />
+        <MiniMap />
+      </ReactFlow>
+      <ConnectionWarning warning={connectionWarning} />
+    </>
   );
 }

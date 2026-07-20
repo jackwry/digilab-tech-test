@@ -11,18 +11,34 @@ export const NODE_DEFINITIONS: Record<
 > = {
   DataSource: {
     inputs: [],
-    outputs: [{ id: "dataset", label: "Dataset", type: "Dataset" }],
+    outputs: [
+      { id: "dataset", label: "Dataset", io: "output", type: "Dataset" },
+    ],
   },
   Transform: {
     inputs: [
-      { id: "dataset", label: "Dataset", type: "Dataset", required: true },
+      {
+        id: "dataset",
+        label: "Dataset",
+        io: "input",
+        type: "Dataset",
+        required: true,
+      },
     ],
-    outputs: [{ id: "dataset", label: "Dataset", type: "Dataset" }],
+    outputs: [
+      { id: "dataset", label: "Dataset", io: "output", type: "Dataset" },
+    ],
   },
   Model: {
     inputs: [
-      { id: "dataset", label: "Dataset", type: "Dataset", required: true },
+      {
+        id: "dataset",
+        label: "Dataset",
+        io: "input",
+        type: "Dataset",
+        required: true,
+      },
     ],
-    outputs: [{ id: "model", label: "Model", type: "Model" }],
+    outputs: [{ id: "model", label: "Model", io: "output", type: "Model" }],
   },
 };

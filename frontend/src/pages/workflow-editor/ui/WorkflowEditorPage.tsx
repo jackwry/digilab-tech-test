@@ -1,6 +1,6 @@
 import { AddNodeToolbar, useAddNode } from "@/features/add-node";
-import { useWorkflowStore } from "@/entities/workflow";
 import { WorkflowCanvas } from "@/widgets/workflow-canvas";
+import { useWorkflowStore } from "@/entities/workflow";
 
 /**
  * The single-page workflow editor. A homepage/workflow-list page is coming in

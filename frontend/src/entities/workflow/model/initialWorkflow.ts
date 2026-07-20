@@ -1,5 +1,8 @@
-import { createFlowNode } from "./nodeFactory";
-import type { FlowEdge, FlowNode } from "./flowTypes";
+import {
+  createFlowNode,
+  type FlowEdge,
+  type FlowNode,
+} from "@/entities/workflow";
 
 /**
  * An example seed graph (DataSource → Transform → Model) so the canvas renders something
